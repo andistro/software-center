@@ -1,0 +1,263 @@
+*{
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, sans-serif, Roboto;
+}
+
+h1{
+    font-size: 24px;
+}
+
+body{
+    max-width: 400px;
+    margin: 16px;
+}
+
+section{
+    margin-bottom: 32px;
+}
+
+section#header{
+    display: flex;
+    align-items: flex-start; /* Alinha ao topo */
+    gap: 12px; /* Espaço entre logo e desc, se desejar */
+}
+
+section#header .header\:logo img{
+    width: 64px;
+    border-radius: 16px;
+}
+
+
+#pesquisar-atualizar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 16px;
+}
+
+#pesquisar {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+}
+
+#pesquisar input[type="search"] {
+    flex: 1;
+    height: 32px;
+    min-width: 60px;
+    padding: 0 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+#pesquisar input[type="search"]::placeholder {
+    line-height: 32px; 
+}
+
+#pesquisar input[type="search"] {
+    line-height: 32px;
+}
+
+#pesquisar button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+#pesquisar button img {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+#atualizar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+#atualizar button {
+    width: 100%;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: #eee;
+    border-radius: 4px;
+    gap: 8px;
+    padding: 0 10px;
+    font-size: 1rem;
+    line-height: 32px;
+}
+
+#atualizar button img {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+#atualizar button span {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    line-height: 32px;
+}
+
+
+#recomendados h1{
+    margin-bottom: 16px;
+}
+#recomendados ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#recomendados li {
+  background: #F2F2F2;
+  border-radius: 4px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  gap: 16px;
+}
+
+.recomendados\:icon {
+  width: 40px;   /* ajuste conforme o tamanho desejado */
+  height: 40px;
+  display: block;
+}
+
+#recomendados li > div:first-child {
+  /* Logo à esquerda */
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+#recomendados li > div:last-child {
+  /* Container do título e botões */
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.recomendados\:titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Botões lado a lado, alinhados à direita */
+#recomendados li > div:last-child > div {
+  display: flex;
+  gap: 8px;
+}
+
+/* Detalhe opcional para botões */
+#recomendados button {
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  background: #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;  /* Centraliza o texto verticalmente */
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+#recomendados button:hover {
+  background: #bdbdbd;
+}
+
+/* HEADER */
+.detalhes\:header {
+  display: flex;
+  align-items: flex-start; /* Alinha todos os itens ao topo */
+  background: #F2F2F2;
+  padding: 16px;
+  border-radius: 8px;
+  gap: 16px;
+}
+
+/* ICON */
+.detalhes\:icon {
+  width: 40px;
+  height: 40px;
+  display: block; /* Garante melhor alinhamento */
+  margin-top: 0;   /* Remove margens extras se houver */
+}
+
+/* Os estilos dos textos, botões e carrossel permanecem iguais */
+
+
+/* TÍTULO */
+.detalhes\:titulo {
+  font-size: 24px;
+  margin: 0;
+}
+
+/* DESCRIÇÃO */
+.detalhes\:desc {
+  font-size: 16px;
+  margin: 4px 0 0 0;
+}
+
+/* BOTÕES */
+.detalhes\:actions {
+  display: flex;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.detalhes\:actions button {
+  flex: 1;
+  height: 32px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: #e0e0e0;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.detalhes\:actions button:hover {
+  background: #d2d2d2;
+}
+
+/* CARROSSEL DE IMAGENS */
+.detalhes\:screenshots {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.detalhes\:screenshots img {
+  height: 200px;
+  width: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  display: inline-block;
+}
