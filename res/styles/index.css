@@ -2,6 +2,15 @@
     margin: 0;
     padding: 0;
     font-family: system-ui, sans-serif, Roboto;
+    --surface-bg: #F2F2F2;
+    --color-white: #FFFFFF;
+    --btn-default: #e0e0e0;
+    --btn-default-hover: #d2d2d2;
+    --btn-escolha-certa: #4873CA;
+    --btn-escolha-certa-hover: #3154A9;
+    --btn-escolha-errada: #F04040;
+    --btn-escolha-errada-hover: #872424;
+    --shadow:0 2px 8px rgba(0,0,0,0.25);
 }
 
 h1{
@@ -15,141 +24,108 @@ body{
 
 section{
     margin-bottom: 32px;
-}
-
-section#header{
     display: flex;
     align-items: flex-start; /* Alinha ao topo */
-    gap: 12px; /* Espaço entre logo e desc, se desejar */
-}
-
-section#header .header\:logo img{
-    width: 64px;
-    border-radius: 16px;
-}
-
-
-#pesquisar-atualizar {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: 16px;
-}
-
-#pesquisar {
-    display: flex;
-    align-items: center;
     width: 100%;
     gap: 8px;
 }
 
-#pesquisar input[type="search"] {
-    flex: 1;
+button{
     height: 32px;
-    min-width: 60px;
-    padding: 0 10px;
-    border: 1px solid #ccc;
+    font-size: 16px;
+    line-height: 16px;
     border-radius: 4px;
-    font-size: 1rem;
-}
-
-#pesquisar input[type="search"]::placeholder {
-    line-height: 32px; 
-}
-
-#pesquisar input[type="search"] {
-    line-height: 32px;
-}
-
-#pesquisar button {
-    width: 32px;
-    height: 32px;
-    padding: 0;
     border: none;
-    background: #eee;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 4px;
+    padding: 0 16px;
 }
 
-#pesquisar button img {
+button img {
     width: 24px;
     height: 24px;
     display: block;
 }
 
-#atualizar {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
-#atualizar button {
-    width: 100%;
+input[type="search"] {
     height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: #eee;
-    border-radius: 4px;
-    gap: 8px;
+    min-width: 60px;
     padding: 0 10px;
-    font-size: 1rem;
-    line-height: 32px;
+    border: 0px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    line-height: 16px;
 }
 
-#atualizar button img {
-    width: 20px;
-    height: 20px;
+input[type="search"]::placeholder {
+    line-height: 16px; 
+}
+
+ul {
     display: block;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    margin-top: 16px;
 }
 
-#atualizar button span {
+.width\:total{
+    width: 100%;
+}
+
+.bg\:surface{
+    background: var(--surface-bg) !important;
+}
+
+.btn\:default{
+    background: var(--btn-default);
+}
+
+.btn\:default:hover{
+    background: var(--btn-default-hover) !important;
+}
+
+.btn\:install{
+    background: var(--btn-escolha-certa);
+    color: var(--color-white);
+}
+
+.btn\:install:hover{
+    background: var(--btn-escolha-certa-hover);
+}
+
+.btn\:uninstall{
+    background: var(--btn-escolha-errada);
+    color: var(--color-white);
+}
+
+.btn\:uninstall:hover{
+    background: var(--btn-escolha-errada-hover);
+}
+
+.card{
+    border-radius: 4px;
     display: flex;
     align-items: center;
-    font-size: 20px;
-    line-height: 32px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    gap: 16px;
 }
 
-
-#recomendados h1{
-    margin-bottom: 16px;
-}
-#recomendados ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#recomendados li {
-  background: #F2F2F2;
-  border-radius: 4px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  box-sizing: border-box;
-  gap: 16px;
-}
-
-.recomendados\:icon {
-  width: 40px;   /* ajuste conforme o tamanho desejado */
-  height: 40px;
-  display: block;
-}
-
-#recomendados li > div:first-child {
+.card\:icon {
   /* Logo à esquerda */
   flex-shrink: 0;
   display: flex;
   align-items: center;
 }
 
-#recomendados li > div:last-child {
+.card\:text {
   /* Container do título e botões */
   display: flex;
   align-items: center;
@@ -158,106 +134,56 @@ section#header .header\:logo img{
   gap: 24px;
 }
 
-.recomendados\:titulo {
-  margin: 0;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-}
-
 /* Botões lado a lado, alinhados à direita */
-#recomendados li > div:last-child > div {
-  display: flex;
-  gap: 8px;
-}
-
-/* Detalhe opcional para botões */
-#recomendados button {
-  height: 32px;
-  padding: 0 14px;
-  border: none;
-  background: #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;  /* Centraliza o texto verticalmente */
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-#recomendados button:hover {
-  background: #bdbdbd;
-}
-
-/* HEADER */
-.detalhes\:header {
-  display: flex;
-  align-items: flex-start; /* Alinha todos os itens ao topo */
-  background: #F2F2F2;
-  padding: 16px;
-  border-radius: 8px;
-  gap: 16px;
-}
-
-/* ICON */
-.detalhes\:icon {
-  width: 40px;
-  height: 40px;
-  display: block; /* Garante melhor alinhamento */
-  margin-top: 0;   /* Remove margens extras se houver */
-}
-
-/* Os estilos dos textos, botões e carrossel permanecem iguais */
-
-
-/* TÍTULO */
-.detalhes\:titulo {
-  font-size: 24px;
-  margin: 0;
-}
-
-/* DESCRIÇÃO */
-.detalhes\:desc {
-  font-size: 16px;
-  margin: 4px 0 0 0;
-}
-
-/* BOTÕES */
-.detalhes\:actions {
+.card\:actions {
   display: flex;
   gap: 12px;
-  margin: 18px 0;
-}
-
-.detalhes\:actions button {
-  flex: 1;
-  height: 32px;
-  font-size: 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  background: #e0e0e0;
-  font-weight: 500;
-  transition: background 0.2s;
-}
-
-.detalhes\:actions button:hover {
-  background: #d2d2d2;
 }
 
 /* CARROSSEL DE IMAGENS */
-.detalhes\:screenshots {
+.card\:screenshots {
   display: flex;
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 8px;
+  margin: 18px 0;
+  width: 100%;
+  max-width: 100%; /* garante limite */
+  box-sizing: border-box;
 }
 
-.detalhes\:screenshots img {
+.card\:screenshots img {
   height: 200px;
   width: auto;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  box-shadow: var(--shadow);
   display: inline-block;
+  border: 1px solid var(--btn-default-hover);
 }
+
+.icon {
+    width: 40px;   /* ajuste conforme o tamanho desejado */
+    height: 40px;
+    display: block;
+    border-radius: 16px;
+}
+
+.icon\:logo{
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+}
+
+.column{
+    flex-direction: column;
+}
+
+.w\:32{
+    width: 32px;
+}
+
+.flex\:1{
+    flex: 1;
+}
+
+
