@@ -7,7 +7,6 @@
         <meta name="description" content="Encontre, baixe, atualize aplicativos para o sistema">
         <link rel="stylesheet" href="res/styles/index.css">
         <link rel="manifest" href="res/manifest.json">
-        <link rel="alternate" type="application/rss+xml" href="">
         <link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Central de aplicativos Andistro">
 
         <!--[OG TAGS]-->
@@ -37,33 +36,41 @@
     <body>
         <div class="app">
             <aside class="menu">
-                <div class="logo">
-                    <img src="res/img/ic_logo.svg" alt="Início">
-                </div>
+                <a href="index.html">
+                    <div class="logo">
+                        <img src="res/img/ic_logo.svg" alt="Início">
+                    </div>
+                </a>
 
-                <button class="menu-btn">
-                    <img src="res/img/ic_home.svg" alt="Início">
-                    <span>Inicio</span>
-                </button>
+                <a href="index.html">
+                    <button class="menu-btn">
+                        <img src="res/img/ic_home.svg" alt="Início">
+                        <span>Inicio</span>
+                    </button>
+                </a>
 
-                <button class="menu-btn">
-                    <img src="res/img/ic_apps.svg" alt="Aplicativos">
-                    <span>Instalados</span>
-                </button>
+                <a href="instalados.html">
+                    <button class="menu-btn">
+                        <img src="res/img/ic_apps.svg" alt="Aplicativos">
+                        <span>Instalados</span>
+                    </button>
+                </a>
 
-                <button class="menu-btn">
-                    <img src="res/img/ic_update.svg" alt="Atualizações">
-                    <span>Procurar atualizações</span>
-                </button>
+                <a href="atualizacoes.html">
+                    <button class="menu-btn">
+                        <img src="res/img/ic_update.svg" alt="Atualizações">
+                        <span>Procurar atualizações</span>
+                    </button>
+                </a>
             </aside>
 
             <section class="content">
                 <form class="pesquisa" id="search-form">
-  <input id="search-input" type="text" placeholder="Faça uma pesquisa">
-  <button id="search-btn" class="btn-search" type="submit">
-    <img src="res/img/ic_search.svg" alt="Buscar">
-  </button>
-</form>
+                    <input id="search-input" type="text" placeholder="Faça uma pesquisa">
+                    <button id="search-btn" class="btn-search" type="submit">
+                        <img src="res/img/ic_search.svg" alt="Buscar">
+                    </button>
+                </form>
 
 
                 <section class="main">
@@ -72,7 +79,7 @@
                 </section>
             </section>
         </div>
-
+        <script src="detect.js"></script>
         <script src="resultados.js"></script>
     </body>
 </html>

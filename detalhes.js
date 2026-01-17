@@ -39,7 +39,8 @@ function montarPagina(programa) {
     <div class="card-header">
       <img class="icon"
            src="res/img/alt_package/${programa.nome_pacote}.svg"
-           alt="${programa.nome_pacote}">
+           alt="${programa.nome_pacote}"
+           onerror="this.onerror=null;this.src='res/img/ic_broken.svg';">
       <div class="card-info">
         <h3 class="card-title">${programa.nome_programa}</h3>
         <p class="card-desc">Carregando descrição...</p>

@@ -7,7 +7,6 @@
         <meta name="description" content="Encontre, baixe, atualize aplicativos para o sistema">
         <link rel="stylesheet" href="res/styles/index.css">
         <link rel="manifest" href="res/manifest.json">
-        <link rel="alternate" type="application/rss+xml" href="">
         <link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Central de aplicativos Andistro">
 
         <!--[OG TAGS]-->
@@ -58,12 +57,12 @@
             </aside>
 
             <section class="content">
-                <header class="pesquisa">
-                    <input type="text" placeholder="Faça uma pesquisa">
-                    <button class="btn-search">
+                <form class="pesquisa" id="search-form">
+                    <input id="search-input" type="text" placeholder="Faça uma pesquisa">
+                    <button id="search-btn" class="btn-search" type="submit">
                         <img src="res/img/ic_search.svg" alt="Buscar">
                     </button>
-                </header>
+                </form>
                 <section class="main">
                     <div id="cards-container">
                     </div>
@@ -74,7 +73,28 @@
                 </section>
             </section>
         </div>
-
+        <script src="detect.js"></script>
         <script src="detalhes.js"></script>
+        <script>
+            // para as pesquisas
+            const form = document.getElementById("search-form");
+            const input = document.getElementById("search-input");
+
+            form.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            const termo = input.value.trim();
+            if (!termo) return;
+
+            // pega todos os parâmetros atuais da URL
+            const currentParams = new URLSearchParams(window.location.search);
+
+            // força/atualiza o q={searchTerms}
+            currentParams.set("q", termo);
+
+            const qs = currentParams.toString();
+            window.location.href = `resultados.html?${qs}`;
+            });
+        </script>
     </body>
 </html>

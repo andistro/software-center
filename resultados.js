@@ -1,7 +1,7 @@
 // resultados.js
 
+const form = document.getElementById("search-form");
 const input = document.getElementById("search-input");
-const btn = document.getElementById("search-btn");
 const container = document.getElementById("cards-container");
 
 // --------- detecção de arquitetura → arch Debian ---------
@@ -48,6 +48,8 @@ function detectarArquiteturaDebian() {
   return "amd64";
 }
 
+const archDetectada = detectarArquiteturaDebian();
+
 // --------- leitura inicial de ?q= ---------
 const params = new URLSearchParams(window.location.search);
 const qParam = params.get("q") || "";
@@ -56,19 +58,9 @@ if (qParam) {
   buscar(qParam);
 }
 
-// --------- eventos: Enter e clique ---------
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    const termo = input.value.trim();
-    if (termo) {
-      atualizarQueryString(termo);
-      buscar(termo);
-    }
-  }
-});
-
-btn.addEventListener("click", () => {
+// --------- evento: submit do form ---------
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
   const termo = input.value.trim();
   if (termo) {
     atualizarQueryString(termo);
@@ -88,9 +80,8 @@ async function buscar(termo) {
   container.innerHTML = "<p>Carregando resultados...</p>";
 
   try {
-    const arch = detectarArquiteturaDebian();
     const baseUrl =
-      `https://packages.debian.org/search?searchon=names&suite=trixie&section=all&arch=${encodeURIComponent(arch)}&keywords=`; // [web:103]
+      `https://packages.debian.org/search?searchon=names&suite=trixie&section=all&arch=${encodeURIComponent(archDetectada)}&keywords=`; // [web:103]
     const targetUrl = `${baseUrl}${encodeURIComponent(termo)}`;
     const proxiedUrl =
       `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
@@ -107,15 +98,18 @@ async function buscar(termo) {
     const itens = extrairResultados(doc);
     if (!itens.length) {
       container.innerHTML = "<p>Nenhum pacote encontrado.</p>";
+      adicionarBannerArquitetura();
       return;
     }
 
     container.innerHTML = "";
     itens.forEach(pkg => montarCard(pkg));
+    adicionarBannerArquitetura();
   } catch (e) {
     console.error("Erro na busca", e);
     container.innerHTML =
       "<p>Erro ao buscar pacotes. Tente novamente mais tarde.</p>";
+    adicionarBannerArquitetura();
   }
 }
 
@@ -175,7 +169,8 @@ function montarCard(pkg) {
     <div class="card-header">
       <img class="icon"
            src="res/img/alt_package/${pkg.nome_pacote}.svg"
-           alt="${nomeExibicao}">
+           alt="${nomeExibicao}"
+           onerror="this.onerror=null;this.src='res/img/ic_broken.svg';">
       <div class="card-info">
         <h3 class="card-title">${nomeExibicao}</h3>
         <p class="card-desc">${descCurta}</p>
@@ -199,4 +194,24 @@ function montarCard(pkg) {
   });
 
   container.appendChild(card);
+}
+
+// adiciona banner de arquitetura no topo da seção de resultados
+function adicionarBannerArquitetura() {
+  const antigo = document.getElementById("arch-banner");
+  if (antigo) antigo.remove();
+
+  const banner = document.createElement("div");
+  banner.id = "arch-banner";
+  banner.textContent = `Arquitetura detectada: ${archDetectada}`;
+
+  banner.style.marginBottom = "16px";
+  banner.style.padding = "8px";
+  banner.style.borderRadius = "8px";
+  banner.style.backgroundColor = "#E0EFFE";
+  banner.style.border = "1px solid #89B4F3";
+  banner.style.fontSize = "12px";
+
+  const parent = container.parentElement;
+  parent.insertBefore(banner, container);
 }

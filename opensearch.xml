@@ -1,11 +1,72 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+
+  <!-- Nome curto exibido na UI do navegador (≤16 caracteres é recomendado) -->
   <ShortName>Central de aplicativos</ShortName>
+
+  <!-- Descrição mais longa do provedor de busca -->
   <Description>Procure pelos aplicativos</Description>
-  <Tags>central aplicativos software linux</Tags>
-  <Image height="16" type="image/vnd.microsoft.icon" width="16">https://www.gstatic.com/android/market_images/web/favicon_v2.ico</Image>
-  <Url template="https://andistro.github.io/software-center/resultados.html?q={searchTerms}&amp;utm_source=opensearch"
-       type="text/html"></Url>
-  <Query role="example" searchTerms="chickens"></Query>
+
+  <!-- Palavras‑chave para identificar o mecanismo -->
+  <Tags>central aplicativos software linux andistro debian</Tags>
+
+  <!-- Página inicial do site da central -->
+  <!--<Contact>contato@andistro.org</Contact>-->
+  <Url type="text/html"
+       method="GET"
+       template="https://andistro.github.io/software-center/resultados.html?q={searchTerms}"/>
+
+  <!-- Resultado em JSON ou XML seriam opcionais; deixados como comentários de exemplo -->
+  <!--
+  <Url type="application/json"
+       method="GET"
+       template="https://andistro.github.io/software-center/api/search?q={searchTerms}"/>
+  -->
+
+  <!-- Sugestões de autocompletar (opcional, suportado por Firefox/Chrome) -->
+  <!--
+  <Url type="application/x-suggestions+json"
+       method="GET"
+       template="https://andistro.github.io/software-center/api/suggest?q={searchTerms}"/>
+  -->
+
+  <!-- Ícones (vários tamanhos para compatibilidade ampla) -->
+  <!-- 16x16: usado em muitas UIs de navegador -->
+  <Image height="16" width="16" type="image/png">
+    https://andistro.github.io/software-center/res/img/ic_logo_16.png
+  </Image>
+
+  <!-- 32x32: ícone de alta resolução -->
+  <Image height="32" width="32" type="image/png">
+    https://andistro.github.io/software-center/res/img/ic_logo_32.png
+  </Image>
+
+  <!-- 64x64: alguns navegadores e UIs de sistemas usam tamanhos maiores -->
+  <Image height="64" width="64" type="image/png">
+    https://andistro.github.io/software-center/res/img/ic_logo_64.png
+  </Image>
+
+  <!-- Opcional: ícone ICO para máxima compatibilidade com versões antigas do IE/Edge Legacy -->
+  <!--
+  <Image height="16" width="16" type="image/x-icon">
+    https://andistro.github.io/software-center/favicon.ico
+  </Image>
+  -->
+
+  <!-- Codificação recomendada -->
+  <InputEncoding>UTF-8</InputEncoding>
+  <OutputEncoding>UTF-8</OutputEncoding>
+
+  <!-- Idioma principal da interface -->
+  <Language>pt-BR</Language>
+
+  <!-- URL da página inicial / landing page da central -->
+  <LongName>Central de aplicativos AnDistro</LongName>
+
+  <!-- Página de ajuda ou documentação (opcional) -->
+  <!--
+  <Developer>Equipe AnDistro</Developer>
+  <Attribution>Resultados de pacotes fornecidos por Debian Packages (packages.debian.org).</Attribution>
+  -->
+
 </OpenSearchDescription>

@@ -13,7 +13,8 @@ async function carregarRecomendados() {
       <div class="card-header">
         <img class="icon"
              src="res/img/alt_package/${prog.nome_pacote}.svg"
-             alt="${prog.nome_programa}">
+             alt="${prog.nome_programa}"
+             onerror="this.onerror=null;this.src='res/img/ic_broken.svg';">
         <div class="card-info">
           <h3 class="card-title">${prog.nome_programa}</h3>
           <p class="card-desc">Carregando descrição...</p>
@@ -65,7 +66,6 @@ async function carregarDescricaoCard(prog, card) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
 
-    // tenta o 1º parágrafo depois de h2/h3, depois h1, depois qualquer <p>
     let p =
       doc.querySelector("h2 + p, h3 + p") ||
       doc.querySelector("h1 + p") ||
