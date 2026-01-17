@@ -4,15 +4,11 @@
     "nome_pacote": "firefox"
   },
   {
-    "nome_programa": "Mozilla Firefox ESR",
-    "nome_pacote": "firefox-esr"
-  },
-  {
     "nome_programa": "GIMP",
     "nome_pacote": "gimp"
   },
   {
-    "nome_programa": "VLC Media Player",
-    "nome_pacote": "vlc"
+    "nome_programa": "Inkscape",
+    "nome_pacote": "inkscape"
   }
 ]

@@ -1,0 +1,44 @@
+[
+  {
+    "nome_programa": "Termux",
+    "nome_pacote": "com.termux",
+    "f-droid": "true",
+    "google-play": "false"
+  },
+  {
+    "nome_programa": "Termux:API",
+    "nome_pacote": "com.termux.api",
+    "f-droid": "true",
+    "google-play": "false"
+  },
+  {
+    "nome_programa": "AVNC",
+    "nome_pacote": "com.gaurav.avnc",
+    "f-droid": "true",
+    "google-play": "true"
+  },
+  {
+    "nome_programa": "bVNC",
+    "nome_pacote": "com.iiordanov.freebVNC",
+    "f-droid": "false",
+    "google-play": "true"
+  },
+  {
+    "nome_programa": "bVNC Pro",
+    "nome_pacote": "com.iiordanov.bVNC",
+    "f-droid": "false",
+    "google-play": "true"
+  },
+  {
+    "nome_programa": "RealVNC",
+    "nome_pacote": "com.realvnc.viewer.android",
+    "f-droid": "false",
+    "google-play": "true"
+  },
+  {
+    "nome_programa": "MultiVNC",
+    "nome_pacote": "com.coboltforge.dontmind.multivnc",
+    "f-droid": "true",
+    "google-play": "true"
+  }
+]
