@@ -4,6 +4,10 @@
     "nome_pacote": "firefox"
   },
   {
+    "nome_programa": "Mozilla Firefox ESR",
+    "nome_pacote": "firefox-esr"
+  },
+  {
     "nome_programa": "GIMP",
     "nome_pacote": "gimp"
   },
