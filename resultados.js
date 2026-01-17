@@ -1,49 +1,8 @@
-// resultados.js
+// resultados.js direto pelo daemon
 
 const form = document.getElementById("search-form");
 const input = document.getElementById("search-input");
 const container = document.getElementById("cards-container");
-
-// --------- detecção de arquitetura → arch Debian ---------
-function detectarArquiteturaDebian() {
-  const ua = navigator.userAgent.toLowerCase();
-  const plat = (navigator.platform || "").toLowerCase();
-
-  if (ua.includes("aarch64") || ua.includes("armv8") || ua.includes("arm64")) {
-    return "arm64";
-  }
-
-  if (ua.includes("armv7") || ua.includes("armv6") || ua.includes("arm ")) {
-    return "armhf";
-  }
-
-  if (
-    ua.includes("x86_64") ||
-    ua.includes("win64") ||
-    ua.includes("wow64") ||
-    plat.includes("x86_64") ||
-    plat.includes("win64")
-  ) {
-    return "amd64";
-  }
-
-  if (
-    ua.includes("i686") ||
-    ua.includes("i586") ||
-    ua.includes("i486") ||
-    ua.includes("i386") ||
-    plat.includes("i686") ||
-    plat.includes("i586") ||
-    plat.includes("i486") ||
-    plat.includes("i386")
-  ) {
-    return "i386";
-  }
-
-  return "amd64";
-}
-
-const archDetectada = detectarArquiteturaDebian();
 
 // --------- leitura inicial de ?q= ---------
 const params = new URLSearchParams(window.location.search);
@@ -70,27 +29,28 @@ function atualizarQueryString(termo) {
   window.history.replaceState({}, "", url.toString());
 }
 
-// --------- busca em packages.debian.org (via corsproxy) ---------
+// --------- busca via daemon AnDistro (APT) ---------
 async function buscar(termo) {
   container.innerHTML = "<p>Carregando resultados...</p>";
 
   try {
-    const baseUrl =
-      `https://packages.debian.org/search?searchon=names&suite=trixie&section=all&arch=${encodeURIComponent(archDetectada)}&keywords=`; // [web:103]
-    const targetUrl = `${baseUrl}${encodeURIComponent(termo)}`;
-    const proxiedUrl =
-      `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
-
-    const res = await fetch(proxiedUrl);
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+    // se não estiver no AnDistro, não dá para consultar APT
+    if (window.__IS_ANDISTRO__ === false) {
+      container.innerHTML =
+        "<p>A busca por pacotes APT só funciona dentro do AnDistro.</p>";
+      return;
     }
 
-    const html = await res.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    // se a flag ainda não foi definida, tenta mesmo assim (caso detect.js não tenha rodado)
+    const url = "http://127.0.0.1:27777/search?q=" + encodeURIComponent(termo);
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status);
+    }
 
-    const itens = extrairResultados(doc);
+    const data = await res.json();
+    const itens = data.results || [];
+
     if (!itens.length) {
       container.innerHTML = "<p>Nenhum pacote encontrado.</p>";
       adicionarBannerArquitetura();
@@ -98,7 +58,7 @@ async function buscar(termo) {
     }
 
     container.innerHTML = "";
-    itens.forEach(pkg => montarCard(pkg));
+    itens.forEach((pkg) => montarCard(pkg));
     adicionarBannerArquitetura();
   } catch (e) {
     console.error("Erro na busca", e);
@@ -106,45 +66,6 @@ async function buscar(termo) {
       "<p>Erro ao buscar pacotes. Tente novamente mais tarde.</p>";
     adicionarBannerArquitetura();
   }
-}
-
-// extrai {nome_pacote, descricao} da página de resultados
-function extrairResultados(doc) {
-  const resultados = [];
-
-  const links = doc.querySelectorAll('a[href^="/trixie/"]');
-
-  links.forEach(a => {
-    const href = a.getAttribute("href") || "";
-    const nome = href.split("/").pop();
-
-    const parent = a.parentElement;
-    let desc = "";
-
-    if (parent) {
-      const text = parent.textContent.replace(/\s+/g, " ").trim();
-      if (text.toLowerCase().startsWith(nome.toLowerCase())) {
-        desc = text.slice(nome.length).trim();
-      } else {
-        desc = text;
-      }
-    }
-
-    resultados.push({
-      nome_pacote: nome,
-      descricao: desc
-    });
-  });
-
-  const unico = [];
-  const vistos = new Set();
-  for (const r of resultados) {
-    if (!vistos.has(r.nome_pacote)) {
-      vistos.add(r.nome_pacote);
-      unico.push(r);
-    }
-  }
-  return unico;
 }
 
 // monta cada card
@@ -156,7 +77,7 @@ function montarCard(pkg) {
   const descCurta =
     pkg.descricao && pkg.descricao.length > 160
       ? pkg.descricao.slice(0, 157) + "..."
-      : (pkg.descricao || "Sem descrição.");
+      : pkg.descricao || "Sem descrição.";
 
   card.innerHTML = `
     <div class="card-header">
@@ -196,14 +117,20 @@ function montarCard(pkg) {
   container.appendChild(card);
 }
 
-// banner de arquitetura no topo
+// banner de "modo APT" / arquitetura (se quiser manter algo visual)
 function adicionarBannerArquitetura() {
   const antigo = document.getElementById("arch-banner");
   if (antigo) antigo.remove();
 
   const banner = document.createElement("div");
   banner.id = "arch-banner";
-  banner.textContent = `Arquitetura detectada: ${archDetectada}`;
+
+  // aqui dá pra mostrar algo mais genérico, já que não usamos mais navigator.arch
+  const texto = window.__IS_ANDISTRO__
+    ? "Busca APT via AnDistro ativa."
+    : "Tentando busca APT (certifique-se de estar no AnDistro).";
+
+  banner.textContent = texto;
 
   banner.style.marginBottom = "16px";
   banner.style.padding = "8px";
