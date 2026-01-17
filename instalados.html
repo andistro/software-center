@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+        <title id="titulo">Central de aplicativos</title>
+        <meta name="description" content="Encontre, baixe, atualize aplicativos para o sistema">
+        <link rel="stylesheet" href="res/styles/index.css">
+        <link rel="manifest" href="res/manifest.json">
+        <link rel="alternate" type="application/rss+xml" href="">
+        <link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Central de aplicativos Andistro">
+
+        <!--[OG TAGS]-->
+        <meta property="og:site_name" content="Central de aplicativos AnDistro">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://andistro.github.io/software-center"> <!--URL do site-->
+
+        <!--[MICROSOFT TAGS]-->
+        <meta name="msapplication-TileColor" content=""> <!--Cor HEX-->
+        <meta name="msapplication-TileImage" content=""> <!--Imagem quadrada-->
+
+        <!--[TAGS DE VERIFICAÇÃO]-->
+        <meta name="google-site-verification" content="">
+        <meta name="msvalidate.01" content="">
+        <meta name="yandex-verification" content="">
+
+        <!--[SCHEMA.ORG]-->
+        <script type="application/ld+json">
+            {
+            "@type": "WebPage",
+            "name": "Central de aplicativos AnDistro |",
+            "url": "https://andistro.github.io/software-center",
+            "@context": "http://schema.org"
+            }
+        </script>
+    </head>
+    <body>
+        <div class="app">
+            <aside class="menu">
+                <div class="logo">
+                    <img src="res/img/ic_logo.svg" alt="Início">
+                </div>
+
+                <button class="menu-btn active">
+                    <img src="res/img/ic_home_active.svg" alt="Início">
+                    <span>Inicio</span>
+                </button>
+
+                <button class="menu-btn">
+                    <img src="res/img/ic_apps.svg" alt="Aplicativos">
+                    <span>Instalados</span>
+                </button>
+
+                <button class="menu-btn">
+                    <img src="res/img/ic_update.svg" alt="Atualizações">
+                    <span>Procurar atualizações</span>
+                </button>
+            </aside>
+
+            <section class="content">
+                <header class="pesquisa">
+                    <input type="text" placeholder="Faça uma pesquisa">
+                    <button class="btn-search">
+                        <img src="res/img/ic_search.svg" alt="Buscar">
+                    </button>
+                </header>
+
+                <!--recomendados.js-->
+                <section class="main">
+                    <h2 class="title">Instalados</h2>
+                    <div id="cards-container"></div>
+                </section>
+            </section>
+        </div>
+
+        <script src="instalados.js"></script>
+    </body>
+</html>
