@@ -1,24 +1,33 @@
-// detect.js
-
 (async function () {
   const bannerId = "andistro-warning";
 
-  // tenta falar com o daemon local
+  // remove banner antigo, se existir
+  const old = document.getElementById(bannerId);
+  if (old) old.remove();
+
   let isAndistro = false;
+
   try {
     const res = await fetch("http://127.0.0.1:27777/ping", { method: "GET" });
-    isAndistro = res.ok;
+    if (res.ok) {
+      isAndistro = true;
+    } else {
+      console.error("Ping ao daemon falhou com HTTP", res.status);
+    }
   } catch (e) {
+    console.error("Erro ao falar com o daemon AnDistro:", e);
     isAndistro = false;
   }
 
+  console.log("Detect.js: isAndistro =", isAndistro);
+
   if (isAndistro) {
-    // opcional: expor global para outros scripts
     window.__IS_ANDISTRO__ = true;
     return;
   }
 
-  // não é AnDistro: mostra aviso e, se quiser, desativa recursos
+  window.__IS_ANDISTRO__ = false;
+
   const banner = document.createElement("div");
   banner.id = bannerId;
   banner.textContent = "Esta página funciona no AnDistro.";
@@ -33,10 +42,8 @@
     padding: "8px",
     fontSize: "12px",
     textAlign: "center",
-    zIndex: "9999"
+    zIndex: "9999",
   });
 
   document.body.appendChild(banner);
-
-  window.__IS_ANDISTRO__ = false;
 })();
