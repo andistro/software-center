@@ -1,80 +1,92 @@
 @import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
-  --bg: #F2F2F2;
-  --bg-alt: #FFFFFF;
-  --btn-default-alt: #073042;
-  --btn-install: #4873CA;
-  --menu-button-active: #E0EFFE;
-  --menu-border-active: #89B4F3;
-  --menu-button-default: #F2F2F2;
-  --menu-border-default: #E5E5E5;
-  --card-bg-default: #F2F2F2;
-  --card-border-default: #E5E5E5;
+    --bg: #F2F2F2;
+    --bg-alt: #FFFFFF;
+    --btn-default-alt: #073042;
+    --btn-default-alt-hover: #2E768D;
+    --btn-install: #4873CA;
+    --btn-install-hover: #5C5CFF;
+    --menu-button-active: #E0EFFE;
+    --menu-border-active: #89B4F3;
+    --menu-button-default: #F2F2F2;
+    --menu-button-hover: #E5E5E5;
+    --menu-border-default: #E5E5E5;
+    --card-bg-default: #F2F2F2;
+    --card-border-default: #E5E5E5;
 }
 
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: "Public Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Public Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 a{
-  text-decoration: none;
+    text-decoration: none;
 }
 
 body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: var(--bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg);
 }
 
 #andistro-warning {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #4873CA;
-  color: #FFFFFF;
-  padding: 8px;
-  font-size: 12px;
-  text-align: center;
-  z-index: 9999;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #4873CA;
+    color: #FFFFFF;
+    padding: 8px;
+    font-size: 12px;
+    text-align: center;
+    z-index: 9999;
 }
 
 /* container principal (máx 360px) */
 .app {
-  width: 100%;
-  background-color: var(--bg);
-  display: flex;
+    width: 100%;
+    background-color: var(--bg);
+    display: flex;
 }
 
 /* menu lateral */
 .menu {
-  max-width: 128px;          /* novo tamanho */
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: stretch; 
+    max-width: 128px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch; 
 }
 
 /* botões menu */
 .menu-btn {
-  width: 100%;               /* ocupa toda a largura do menu */
-  height: auto;
-  min-height: 56px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--menu-border-default);
-  background: var(--menu-button-default);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
+    width: 100%;
+    height: auto;
+    min-height: 56px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid var(--menu-border-default);
+    background: var(--menu-button-default);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+.menu-btn:hover{
+    background: var(--menu-button-hover);
+    cursor: pointer;
+}
+
+.menu-btn.active:hover{
+    cursor: default;
 }
 
 .menu .logo img,
@@ -83,51 +95,51 @@ body {
 }
 
 .menu-btn span {
-  font-size: 12px;           
-  font-weight: 700;
+    font-size: 12px;           
+    font-weight: 700;
 }
 
 /* botão ativo: não mostra o texto */
 .menu-btn.active span {
-  display: none;
+    display: none;
 }
 
 .menu-btn.active {
-  background: var(--menu-button-active);
-  border-color: var(--menu-border-active);
+    background: var(--menu-button-active);
+    border-color: var(--menu-border-active);
 }
 
 
 /* área de conteúdo */
 .content {
-  flex: 1;
-  padding: 16px;
-  max-width: 720px;
+    flex: 1;
+    padding: 16px;
+    max-width: 720px;
 }
 
 /* barra de pesquisa */
 .pesquisa {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .pesquisa input {
-  flex: 1;
-  height: 40px;        
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  padding: 8px;
-  font-size: 16px;
+    flex: 1;
+    height: 40px;        
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 8px;
+    font-size: 16px;
 }
 
 .btn-search {
-  width: 40px;
-  height: 40px;
-  padding: 6px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background: #fff;
+    width: 40px;
+    height: 40px;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: #fff;
 }
 
 .btn-search img{
@@ -142,99 +154,109 @@ body {
 }
 /* seção recomendados */
 .main .title {
-  font-size: 18px;
-  font-weight: 800;         
-  margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 800;         
+    margin-bottom: 16px;
 }
 
 /* card do app */
 .card {
-  border-radius: 8px;
-  background: var(--card-bg-default);
-  border: 1px solid var(--card-border-default);
-  padding: 16px;
-  margin-bottom: 16px;
+    border-radius: 8px;
+    background: var(--card-bg-default);
+    border: 1px solid var(--card-border-default);
+    padding: 16px;
+    margin-bottom: 16px;
 }
 
 .card-header {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 8px;
-  align-items: center;     /* centro vertical */
-  justify-content: flex-start; /* alinhado à esquerda */
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 8px;
+    align-items: center;     /* centro vertical */
+    justify-content: flex-start; /* alinhado à esquerda */
 }
 
 .card-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* texto centralizado verticalmente no bloco */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* texto centralizado verticalmente no bloco */
 }
 
 .icon {
-  width: 40px;
-  height: 40px;
+    width: 40px;
+    height: 40px;
 }
 
 .card-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
 .card-desc {
-  font-size: 12px;
+    font-size: 12px;
 }
 
 .card-actions {
-  display: flex;
-  gap: 16px;
-  padding: 8px;
+    display: flex;
+    gap: 16px;
+    padding: 8px;
 }
 
 .card-actions .btn {
-  width: 100%;               /* button width 100% */
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 4px;
-  border: none;
-  color: #fff;
-  padding: 8px;
+    width: 100%;               /* button width 100% */
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    color: #fff;
+    padding: 8px;
 }
 
  .card-actions .btn-alt {
-  background-color: var(--btn-default-alt);
+    background-color: var(--btn-default-alt);
+}
+
+.card-actions .btn-alt:hover{
+    cursor: pointer;
+    background-color: var(--btn-default-alt-hover);
 }
 
 .card-actions .btn-install {
-  background-color: var(--btn-install);
+    background-color: var(--btn-install);
+}
+
+.card-actions .btn-install:hover{
+    cursor: pointer;
+    background-color: var(--btn-install-hover);
 }
 
 .carrossel {
-  margin-bottom: 16px;
-  overflow: hidden;
-  border-radius: 8px;
-  border: 1px solid var(--card-border-default);
-  background: #000;
+    margin-bottom: 16px;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid var(--card-border-default);
+    background: #000;
 }
 
 .carrossel-inner {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding: 8px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 8px;
 }
 
 .carrossel-item {
-  flex: 0 0 auto;
-  max-height: 320px;          /* altura máxima desejada */
-  scroll-snap-align: start;
+    flex: 0 0 auto;
+    max-height: 320px;          /* altura máxima desejada */
+    scroll-snap-align: start;
 }
 
 .carrossel-item img {
-  display: block;
-  max-height: 320px;          /* garante o limite */
-  border-radius: 4px;
-  object-fit: cover;
+    display: block;
+    max-height: 320px;          /* garante o limite */
+    border-radius: 4px;
+    object-fit: cover;
 }
