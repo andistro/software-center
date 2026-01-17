@@ -9,17 +9,14 @@ function detectarArquiteturaDebian() {
   const ua = navigator.userAgent.toLowerCase();
   const plat = (navigator.platform || "").toLowerCase();
 
-  // ARM 64 bits
   if (ua.includes("aarch64") || ua.includes("armv8") || ua.includes("arm64")) {
     return "arm64";
   }
 
-  // ARM 32 bits
   if (ua.includes("armv7") || ua.includes("armv6") || ua.includes("arm ")) {
     return "armhf";
   }
 
-  // x86_64
   if (
     ua.includes("x86_64") ||
     ua.includes("win64") ||
@@ -30,7 +27,6 @@ function detectarArquiteturaDebian() {
     return "amd64";
   }
 
-  // x86 32 bits
   if (
     ua.includes("i686") ||
     ua.includes("i586") ||
@@ -44,7 +40,6 @@ function detectarArquiteturaDebian() {
     return "i386";
   }
 
-  // fallback
   return "amd64";
 }
 
@@ -117,12 +112,11 @@ async function buscar(termo) {
 function extrairResultados(doc) {
   const resultados = [];
 
-  // links para /trixie/<pacote> nos resultados. [web:85][web:103]
   const links = doc.querySelectorAll('a[href^="/trixie/"]');
 
   links.forEach(a => {
     const href = a.getAttribute("href") || "";
-    const nome = href.split("/").pop(); // /trixie/firefox-esr -> firefox-esr
+    const nome = href.split("/").pop();
 
     const parent = a.parentElement;
     let desc = "";
@@ -142,7 +136,6 @@ function extrairResultados(doc) {
     });
   });
 
-  // remove duplicados
   const unico = [];
   const vistos = new Set();
   for (const r of resultados) {
@@ -185,18 +178,25 @@ function montarCard(pkg) {
   const btnDetalhes = card.querySelector(".btn-alt");
   btnDetalhes.addEventListener("click", () => {
     const base = "detalhes.html";
-
     const currentParams = new URLSearchParams(window.location.search);
     currentParams.set("pkg", pkg.nome_pacote);
-
     const qs = currentParams.toString();
     window.location.href = `${base}?${qs}`;
+  });
+
+  const btnInstalar = card.querySelector(".btn-install");
+  btnInstalar.addEventListener("click", () => {
+    if (typeof instalarPacote === "function") {
+      instalarPacote(pkg.nome_pacote);
+    } else {
+      console.error("Função instalarPacote não encontrada.");
+    }
   });
 
   container.appendChild(card);
 }
 
-// adiciona banner de arquitetura no topo da seção de resultados
+// banner de arquitetura no topo
 function adicionarBannerArquitetura() {
   const antigo = document.getElementById("arch-banner");
   if (antigo) antigo.remove();

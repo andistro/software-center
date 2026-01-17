@@ -95,6 +95,30 @@
             const qs = currentParams.toString();
             window.location.href = `resultados.html?${qs}`;
             });
+
+            async function instalarPacote(nomePacote) {
+                if (!window.__IS_ANDISTRO__) {
+                    // aqui você pode trocar alert por um toast/overlay depois
+                    alert("Instalação disponível apenas no AnDistro.");
+                    return;
+                }
+
+                try {
+                const res = await fetch("http://127.0.0.1:27777/install", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pkg: nomePacote })
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                // opcional: tratar resposta, exibir status, etc.
+                // const data = await res.json();
+                // console.log(data);
+                } catch (e) {
+                    console.error("Erro ao solicitar instalação", e);
+                    alert("Erro ao solicitar instalação no AnDistro.");
+                }
+            }
         </script>
     </body>
 </html>

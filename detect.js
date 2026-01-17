@@ -1,20 +1,42 @@
 // detect.js
 
-(function () {
-  // ajuste esta lista conforme o userAgent que o AnDistro expõe
-  const USER_AGENTS_PERMITIDOS = ["andistro", "debian"];
+(async function () {
+  const bannerId = "andistro-warning";
 
-  const ua = navigator.userAgent.toLowerCase();
-  const permitido = USER_AGENTS_PERMITIDOS.some(sig => ua.includes(sig));
-
-  if (permitido) {
-    return; // não mostra aviso
+  // tenta falar com o daemon local
+  let isAndistro = false;
+  try {
+    const res = await fetch("http://127.0.0.1:27777/ping", { method: "GET" });
+    isAndistro = res.ok;
+  } catch (e) {
+    isAndistro = false;
   }
 
-  // cria o banner fixo no bottom
+  if (isAndistro) {
+    // opcional: expor global para outros scripts
+    window.__IS_ANDISTRO__ = true;
+    return;
+  }
+
+  // não é AnDistro: mostra aviso e, se quiser, desativa recursos
   const banner = document.createElement("div");
-  banner.id = "andistro-warning";
+  banner.id = bannerId;
   banner.textContent = "Esta página funciona no AnDistro.";
 
+  Object.assign(banner.style, {
+    position: "fixed",
+    left: "0",
+    right: "0",
+    bottom: "0",
+    backgroundColor: "#4873CA",
+    color: "#FFFFFF",
+    padding: "8px",
+    fontSize: "12px",
+    textAlign: "center",
+    zIndex: "9999"
+  });
+
   document.body.appendChild(banner);
+
+  window.__IS_ANDISTRO__ = false;
 })();

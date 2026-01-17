@@ -52,6 +52,16 @@ function montarPagina(programa) {
   `;
   container.appendChild(card);
 
+  // botão instalar chama função global definida no HTML
+  const btnInstalar = card.querySelector(".btn-install");
+  btnInstalar.addEventListener("click", () => {
+    if (typeof instalarPacote === "function") {
+      instalarPacote(programa.nome_pacote);
+    } else {
+      console.error("Função instalarPacote não encontrada.");
+    }
+  });
+
   carregarDescricaoCard(programa, card);
   montarCarrossel(programa);
 }
