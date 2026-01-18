@@ -28,6 +28,8 @@ async function carregarInstaladosENovos() {
       const dataInst = await resInst.json();
       const names = dataInst.packages || [];
       pacotesInstalados = new Set(names);
+    } else {
+      pacotesInstalados = new Set();
     }
 
     // pacotes com atualização
@@ -36,6 +38,8 @@ async function carregarInstaladosENovos() {
       const dataUpd = await resUpd.json();
       const updates = dataUpd.updates || [];
       pacotesComUpdate = new Set(updates.map((u) => u.nome_pacote));
+    } else {
+      pacotesComUpdate = new Set();
     }
   } catch (e) {
     console.error("Erro ao carregar status APT:", e);
@@ -78,8 +82,7 @@ async function carregarPrograma() {
     const res = await fetch(URL_RECOMENDADOS);
     if (res.ok) {
       const lista = await res.json();
-      const encontrado =
-        lista.find((p) => p.nome_pacote === pkg) || null;
+      const encontrado = lista.find((p) => p.nome_pacote === pkg) || null;
       if (encontrado) programa = encontrado;
     }
   } catch (e) {
@@ -108,7 +111,6 @@ function montarPagina(programa) {
     pacotesComUpdate instanceof Set &&
     pacotesComUpdate.has(programa.nome_pacote);
 
-  // vamos sempre renderizar os três botões, mas alguns podem ficar desabilitados
   card.innerHTML = `
     <div class="card-header">
       <img class="icon"
@@ -134,25 +136,26 @@ function montarPagina(programa) {
 
   // estado inicial dos botões
   if (!window.__IS_ANDISTRO__) {
-    // fora do AnDistro: só exibe, tudo desabilitado
     [btnAbrir, btnAtualizar, btnRemover].forEach((b) => {
       b.disabled = true;
       b.title = "Disponível apenas no AnDistro.";
     });
   } else {
-    // dentro do AnDistro
     if (!jaInstalado) {
-      // se não está instalado: não pode abrir nem desinstalar
+      // não instalado: só faz sentido mostrar instalar (no topo da página você ainda tem botão instalar global)
       btnAbrir.disabled = true;
       btnRemover.disabled = true;
       btnAtualizar.disabled = true;
-      btnAtualizar.title = "Atualização disponível apenas se o pacote estiver instalado.";
+      btnAtualizar.title =
+        "Atualização disponível apenas se o pacote estiver instalado.";
     } else {
       // instalado
       btnAbrir.disabled = false;
       btnRemover.disabled = false;
+
       if (temUpdate) {
         btnAtualizar.disabled = false;
+        btnAtualizar.title = "";
       } else {
         btnAtualizar.disabled = true;
         btnAtualizar.title = "Nenhuma atualização disponível.";
@@ -181,7 +184,7 @@ function montarPagina(programa) {
   });
 
   btnAtualizar.addEventListener("click", async () => {
-    if (!window.__IS_ANDISTRO__) return;
+    if (!window.__IS_ANDISTRO__ || btnAtualizar.disabled) return;
     try {
       const res = await fetch("http://127.0.0.1:27777/install", {
         method: "POST",
@@ -191,7 +194,9 @@ function montarPagina(programa) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.code !== 0) {
         console.error("Falha ao atualizar pacote:", data);
-        alert("Não foi possível atualizar o pacote.\nVeja o console para detalhes.");
+        alert(
+          "Não foi possível atualizar o pacote.\nVeja o console para detalhes."
+        );
         return;
       }
       alert(`Pacote "${programa.nome_pacote}" atualizado com sucesso.`);
@@ -202,29 +207,29 @@ function montarPagina(programa) {
   });
 
   btnRemover.addEventListener("click", async () => {
-    if (!window.__IS_ANDISTRO__) return;
+    if (!window.__IS_ANDISTRO__ || btnRemover.disabled) return;
     const ok = confirm(
       `Tem certeza que deseja remover o pacote "${programa.nome_pacote}"?`
     );
     if (!ok) return;
 
     try {
-      // aqui dá para depois trocar para /remove no daemon;
-      // por enquanto, reusa /install com apt-get remove se você criar isso no backend.
-      const res = await fetch("http://127.0.0.1:27777/install", {
+      const res = await fetch("http://127.0.0.1:27777/remove", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pkg: `-${programa.nome_pacote}` }),
+        body: JSON.stringify({ pkg: programa.nome_pacote }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.code !== 0) {
         console.error("Falha ao remover pacote:", data);
-        alert("Não foi possível remover o pacote.\nVeja o console para detalhes.");
+        alert(
+          "Não foi possível remover o pacote.\nVeja o console para detalhes."
+        );
         return;
       }
-      alert(`Pacote "${programa.nome_pacote}" removido (ou marcado para remoção).`);
+      alert(`Pacote "${programa.nome_pacote}" removido com sucesso.`);
     } catch (e) {
-      console.error("Erro ao chamar /install (remove):", e);
+      console.error("Erro ao chamar /remove:", e);
       alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
     }
   });
@@ -237,7 +242,7 @@ function montarPagina(programa) {
 async function carregarDescricaoCard(programa, card) {
   const pDesc = card.querySelector(".card-desc");
 
-  // 1) tenta via Debian stable
+  // 1) via Debian stable
   try {
     const targetUrl =
       `https://packages.debian.org/stable/${programa.nome_pacote}`;
