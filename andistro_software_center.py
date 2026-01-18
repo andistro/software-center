@@ -219,6 +219,50 @@ def icon():
     return jsonify({"found": True, "path": path})
 
 
+# ---------------- ABRIR APLICATIVO ----------------
+
+def guess_exec_from_package(pkg_name: str):
+    """
+    Heurística simples: tenta descobrir o comando a partir do nome do pacote.
+    Ajuste estes casos especiais conforme necessário.
+    """
+    pkg = (pkg_name or "").lower()
+
+    # casos especiais conhecidos
+    if pkg in ("bleachbit", "bleachbit-root"):
+        return "bleachbit"
+
+    # aqui você pode ir adicionando mapeamentos específicos, por exemplo:
+    # if pkg in ("firefox-esr", "firefox"):
+    #     return "firefox-esr"
+    # if pkg in ("chromium", "chromium-browser"):
+    #     return "chromium"
+
+    # fallback: tentar o próprio nome do pacote
+    return pkg_name
+
+
+@app.post("/open")
+def open_app():
+    data = request.get_json(silent=True) or {}
+    pkg = (data.get("pkg") or "").strip()
+    if not pkg:
+        return jsonify({"error": "missing pkg"}), 400
+
+    cmd = guess_exec_from_package(pkg)
+
+    try:
+        # não usa shell; roda de forma assíncrona
+        subprocess.Popen(
+            [cmd],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return jsonify({"ok": True, "cmd": cmd})
+    except Exception as e:
+        return jsonify({"ok": False, "cmd": cmd, "error": str(e)}), 500
+
+
 # ---------------- INSTALAR ----------------
 
 @app.post("/install")

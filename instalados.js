@@ -27,7 +27,7 @@ async function carregarInstalados() {
       tituloApps.textContent = "Aplicativos";
       container.appendChild(tituloApps);
 
-      apps.forEach(pkg => container.appendChild(criarCard(pkg)));
+      apps.forEach((pkg) => container.appendChild(criarCard(pkg)));
     }
 
     if (addons.length) {
@@ -36,7 +36,11 @@ async function carregarInstalados() {
       tituloAddons.textContent = "Extensões e complementos";
       container.appendChild(tituloAddons);
 
-      addons.forEach(pkg => container.appendChild(criarCard(pkg)));
+      addons.forEach((pkg) => container.appendChild(criarCard(pkg)));
+    }
+
+    if (!apps.length && !addons.length) {
+      container.innerHTML = "<p>Nenhum pacote instalado encontrado.</p>";
     }
   } catch (e) {
     console.error("Erro ao carregar instalados", e);
@@ -57,7 +61,7 @@ function criarCard(pkg) {
       <img class="icon"
            src="http://127.0.0.1:27777/icon?pkg=${encodeURIComponent(pacote)}"
            alt="${nome}"
-           onerror="this.onerror=null;this.src='res/img/alt_package/${pacote}.svg'; this.onerror=function(){this.src='res/img/ic_broken.svg';};">
+           onerror="this.onerror=null;this.src='res/img/alt_package/${pacote}.svg';this.onerror=function(){this.src='res/img/ic_broken.svg';};">
       <div class="card-info">
         <h3 class="card-title">${nome}</h3>
         <p class="card-desc">${pkg.descricao || ""}</p>
@@ -78,7 +82,29 @@ function criarCard(pkg) {
     window.location.href = `${base}?${qs}`;
   });
 
-  // futuro: botão Abrir chamando /run ou /open
+  const btnAbrir = card.querySelector(".btn-install");
+  btnAbrir.addEventListener("click", async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:27777/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pkg: pacote }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.ok) {
+        console.error("Falha ao abrir app:", data);
+        alert("Não foi possível abrir o aplicativo.\nVeja o console para detalhes.");
+        return;
+      }
+
+      console.log("Abrindo app:", data.cmd);
+    } catch (e) {
+      console.error("Erro ao chamar /open:", e);
+      alert("Erro ao abrir o aplicativo.\nVeja o console para detalhes.");
+    }
+  });
+
   return card;
 }
 
