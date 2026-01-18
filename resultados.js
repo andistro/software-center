@@ -4,13 +4,39 @@ const form = document.getElementById("search-form");
 const input = document.getElementById("search-input");
 const container = document.getElementById("cards-container");
 
+// conjunto com nomes de pacotes instalados
+let pacotesInstalados = new Set();
+
+// --------- carregar nomes de pacotes instalados ---------
+async function carregarPacotesInstalados() {
+  if (window.__IS_ANDISTRO__ === false) {
+    pacotesInstalados = new Set();
+    return;
+  }
+
+  try {
+    const res = await fetch("http://127.0.0.1:27777/installed-names");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const names = data.packages || [];
+    pacotesInstalados = new Set(names);
+  } catch (e) {
+    console.error("Erro ao carregar lista de pacotes instalados:", e);
+    pacotesInstalados = new Set();
+  }
+}
+
 // --------- leitura inicial de ?q= ---------
 const params = new URLSearchParams(window.location.search);
 const qParam = params.get("q") || "";
-if (qParam) {
-  input.value = qParam;
-  buscar(qParam);
-}
+
+(async () => {
+  await carregarPacotesInstalados();
+  if (qParam) {
+    input.value = qParam;
+    buscar(qParam);
+  }
+})();
 
 // --------- evento: submit do form ---------
 form.addEventListener("submit", (e) => {
@@ -41,8 +67,13 @@ async function buscar(termo) {
       return;
     }
 
-    // se a flag ainda não foi definida, tenta mesmo assim (caso detect.js não tenha rodado)
-    const url = "http://127.0.0.1:27777/search?q=" + encodeURIComponent(termo);
+    // garante que temos a lista de instalados (caso detect.js tenha rodado depois)
+    if (!(pacotesInstalados instanceof Set) || pacotesInstalados.size === 0) {
+      await carregarPacotesInstalados();
+    }
+
+    const url =
+      "http://127.0.0.1:27777/search?q=" + encodeURIComponent(termo);
     const res = await fetch(url);
     if (!res.ok) {
       throw new Error("HTTP " + res.status);
@@ -79,6 +110,12 @@ function montarCard(pkg) {
       ? pkg.descricao.slice(0, 157) + "..."
       : pkg.descricao || "Sem descrição.";
 
+  const jaInstalado =
+    pacotesInstalados instanceof Set &&
+    pacotesInstalados.has(pkg.nome_pacote);
+
+  const labelBotao = jaInstalado ? "Abrir" : "Instalar";
+
   card.innerHTML = `
     <div class="card-header">
       <img class="icon"
@@ -92,7 +129,7 @@ function montarCard(pkg) {
     </div>
     <div class="card-actions">
       <button class="btn btn-alt">Detalhes</button>
-      <button class="btn btn-install">Instalar</button>
+      <button class="btn btn-install">${labelBotao}</button>
     </div>
   `;
 
@@ -105,12 +142,41 @@ function montarCard(pkg) {
     window.location.href = `${base}?${qs}`;
   });
 
-  const btnInstalar = card.querySelector(".btn-install");
-  btnInstalar.addEventListener("click", () => {
-    if (typeof instalarPacote === "function") {
-      instalarPacote(pkg.nome_pacote);
+  const btnAcao = card.querySelector(".btn-install");
+  btnAcao.addEventListener("click", () => {
+    if (!window.__IS_ANDISTRO__) {
+      alert("Esta ação só funciona dentro do AnDistro.");
+      return;
+    }
+
+    if (
+      pacotesInstalados instanceof Set &&
+      pacotesInstalados.has(pkg.nome_pacote)
+    ) {
+      // já instalado → abrir
+      fetch("http://127.0.0.1:27777/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pkg: pkg.nome_pacote }),
+      })
+        .then((r) => r.json().catch(() => ({})))
+        .then((data) => {
+          if (!data.ok) {
+            console.error("Falha ao abrir app:", data);
+            alert("Não foi possível abrir o aplicativo.");
+          }
+        })
+        .catch((e) => {
+          console.error("Erro ao chamar /open:", e);
+          alert("Erro ao abrir o aplicativo.");
+        });
     } else {
-      console.error("Função instalarPacote não encontrada.");
+      // não instalado → instalar
+      if (typeof instalarPacote === "function") {
+        instalarPacote(pkg.nome_pacote);
+      } else {
+        console.error("Função instalarPacote não encontrada.");
+      }
     }
   });
 
@@ -125,7 +191,6 @@ function adicionarBannerArquitetura() {
   const banner = document.createElement("div");
   banner.id = "arch-banner";
 
-  // aqui dá pra mostrar algo mais genérico, já que não usamos mais navigator.arch
   const texto = window.__IS_ANDISTRO__
     ? "Busca APT via AnDistro ativa."
     : "Tentando busca APT (certifique-se de estar no AnDistro).";
