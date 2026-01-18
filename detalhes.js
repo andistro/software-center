@@ -174,10 +174,7 @@ function montarPagina(programa) {
         btnAtualizar.disabled = false;
         btnAtualizar.title = "";
       } else {
-        // se quiser esconder de vez:
-        // btnAtualizar.style.display = "none";
-        btnAtualizar.disabled = true;
-        btnAtualizar.title = "Nenhuma atualização disponível.";
+        btnAtualizar.style.display = "none"; // agora some mesmo
       }
     }
   }
