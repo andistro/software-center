@@ -7,7 +7,6 @@ from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-# app = Flask(__name__)
 app = Flask("AnDistro Software Center")
 # CORS liberado somente para o front em GitHub Pages
 CORS(app, origins=["https://andistro.github.io"])
@@ -78,6 +77,22 @@ def installed():
     try:
         dados = parse_installed()
         return jsonify(dados)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.get("/installed-names")
+def installed_names():
+    """
+    Retorna apenas os nomes dos pacotes instalados.
+    Formato: { "packages": ["bleachbit", "firefox-esr", ...] }
+    """
+    try:
+        dados = parse_installed()
+        apps = dados.get("apps", [])
+        addons = dados.get("addons", [])
+        names = sorted({p["nome_pacote"] for p in (apps + addons)})
+        return jsonify({"packages": names})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -232,7 +247,7 @@ def guess_exec_from_package(pkg_name: str):
     if pkg in ("bleachbit", "bleachbit-root"):
         return "bleachbit"
 
-    # aqui você pode ir adicionando mapeamentos específicos, por exemplo:
+    # exemplos a estender:
     # if pkg in ("firefox-esr", "firefox"):
     #     return "firefox-esr"
     # if pkg in ("chromium", "chromium-browser"):
@@ -252,7 +267,6 @@ def open_app():
     cmd = guess_exec_from_package(pkg)
 
     try:
-        # não usa shell; roda de forma assíncrona
         subprocess.Popen(
             [cmd],
             stdout=subprocess.DEVNULL,
@@ -263,7 +277,7 @@ def open_app():
         return jsonify({"ok": False, "cmd": cmd, "error": str(e)}), 500
 
 
-# ---------------- INSTALAR ----------------
+# ---------------- INSTALAR / REMOVER ----------------
 
 @app.post("/install")
 def install():
@@ -274,6 +288,25 @@ def install():
 
     # IMPORTANTE: requer root / sudo devidamente configurado.
     cmd = f"apt-get install -y {pkg!s}"
+    code, out, err = run_cmd(cmd)
+
+    return jsonify({
+        "pkg": pkg,
+        "code": code,
+        "stdout": out,
+        "stderr": err,
+    }), (200 if code == 0 else 500)
+
+
+@app.post("/remove")
+def remove():
+    data = request.get_json(silent=True) or {}
+    pkg = data.get("pkg", "").strip()
+    if not pkg:
+        return jsonify({"error": "missing pkg"}), 400
+
+    # IMPORTANTE: também requer root / sudo configurado.
+    cmd = f"apt-get remove -y {pkg!s}"
     code, out, err = run_cmd(cmd)
 
     return jsonify({

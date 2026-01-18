@@ -9,20 +9,84 @@ if (!pkg) {
 
 const URL_RECOMENDADOS = "recomendados.json";
 
+let pacotesInstalados = new Set();
+let pacotesComUpdate = new Set();
+
+// --------- helpers daemon ---------
+
+async function carregarInstaladosENovos() {
+  if (!window.__IS_ANDISTRO__) {
+    pacotesInstalados = new Set();
+    pacotesComUpdate = new Set();
+    return;
+  }
+
+  try {
+    // nomes instalados
+    const resInst = await fetch("http://127.0.0.1:27777/installed-names");
+    if (resInst.ok) {
+      const dataInst = await resInst.json();
+      const names = dataInst.packages || [];
+      pacotesInstalados = new Set(names);
+    }
+
+    // pacotes com atualização
+    const resUpd = await fetch("http://127.0.0.1:27777/updates");
+    if (resUpd.ok) {
+      const dataUpd = await resUpd.json();
+      const updates = dataUpd.updates || [];
+      pacotesComUpdate = new Set(updates.map((u) => u.nome_pacote));
+    }
+  } catch (e) {
+    console.error("Erro ao carregar status APT:", e);
+    pacotesInstalados = new Set();
+    pacotesComUpdate = new Set();
+  }
+}
+
+// descrição via daemon (fallback)
+async function obterDescricaoViaDaemon(nomePacote) {
+  if (!window.__IS_ANDISTRO__) return "";
+
+  try {
+    const url =
+      "http://127.0.0.1:27777/search?q=" + encodeURIComponent(nomePacote);
+    const res = await fetch(url);
+    if (!res.ok) return "";
+
+    const data = await res.json();
+    const itens = data.results || [];
+    const encontrado = itens.find((p) => p.nome_pacote === nomePacote);
+    return encontrado && encontrado.descricao ? encontrado.descricao : "";
+  } catch (e) {
+    console.error("Erro ao obter descrição via daemon:", e);
+    return "";
+  }
+}
+
+// --------- fluxo principal ---------
+
 async function carregarPrograma() {
+  await carregarInstaladosENovos();
+
+  let programa = {
+    nome_programa: pkg,
+    nome_pacote: pkg,
+  };
+
   try {
     const res = await fetch(URL_RECOMENDADOS);
-    const lista = await res.json();
-
-    const programa = lista.find(p => p.nome_pacote === pkg) || {
-      nome_programa: pkg,
-      nome_pacote: pkg
-    };
-
-    montarPagina(programa);
+    if (res.ok) {
+      const lista = await res.json();
+      const encontrado =
+        lista.find((p) => p.nome_pacote === pkg) || null;
+      if (encontrado) programa = encontrado;
+    }
   } catch (e) {
     console.error("Erro ao carregar recomendados.json", e);
   }
+
+  montarPagina(programa);
 }
 
 function montarPagina(programa) {
@@ -35,6 +99,16 @@ function montarPagina(programa) {
 
   const card = document.createElement("div");
   card.className = "card";
+
+  const jaInstalado =
+    pacotesInstalados instanceof Set &&
+    pacotesInstalados.has(programa.nome_pacote);
+
+  const temUpdate =
+    pacotesComUpdate instanceof Set &&
+    pacotesComUpdate.has(programa.nome_pacote);
+
+  // vamos sempre renderizar os três botões, mas alguns podem ficar desabilitados
   card.innerHTML = `
     <div class="card-header">
       <img class="icon"
@@ -47,18 +121,111 @@ function montarPagina(programa) {
       </div>
     </div>
     <div class="card-actions">
-      <button class="btn btn-install">Instalar</button>
+      <button class="btn btn-install btn-open">Abrir</button>
+      <button class="btn btn-install btn-update">Atualizar</button>
+      <button class="btn btn-install btn-remove">Desinstalar</button>
     </div>
   `;
   container.appendChild(card);
 
-  // botão instalar chama função global definida no HTML
-  const btnInstalar = card.querySelector(".btn-install");
-  btnInstalar.addEventListener("click", () => {
-    if (typeof instalarPacote === "function") {
-      instalarPacote(programa.nome_pacote);
+  const btnAbrir = card.querySelector(".btn-open");
+  const btnAtualizar = card.querySelector(".btn-update");
+  const btnRemover = card.querySelector(".btn-remove");
+
+  // estado inicial dos botões
+  if (!window.__IS_ANDISTRO__) {
+    // fora do AnDistro: só exibe, tudo desabilitado
+    [btnAbrir, btnAtualizar, btnRemover].forEach((b) => {
+      b.disabled = true;
+      b.title = "Disponível apenas no AnDistro.";
+    });
+  } else {
+    // dentro do AnDistro
+    if (!jaInstalado) {
+      // se não está instalado: não pode abrir nem desinstalar
+      btnAbrir.disabled = true;
+      btnRemover.disabled = true;
+      btnAtualizar.disabled = true;
+      btnAtualizar.title = "Atualização disponível apenas se o pacote estiver instalado.";
     } else {
-      console.error("Função instalarPacote não encontrada.");
+      // instalado
+      btnAbrir.disabled = false;
+      btnRemover.disabled = false;
+      if (temUpdate) {
+        btnAtualizar.disabled = false;
+      } else {
+        btnAtualizar.disabled = true;
+        btnAtualizar.title = "Nenhuma atualização disponível.";
+      }
+    }
+  }
+
+  // ações
+  btnAbrir.addEventListener("click", async () => {
+    if (!window.__IS_ANDISTRO__) return;
+    try {
+      const res = await fetch("http://127.0.0.1:27777/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pkg: programa.nome_pacote }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        console.error("Falha ao abrir app:", data);
+        alert("Não foi possível abrir o aplicativo.");
+      }
+    } catch (e) {
+      console.error("Erro ao chamar /open:", e);
+      alert("Erro ao abrir o aplicativo.");
+    }
+  });
+
+  btnAtualizar.addEventListener("click", async () => {
+    if (!window.__IS_ANDISTRO__) return;
+    try {
+      const res = await fetch("http://127.0.0.1:27777/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pkg: programa.nome_pacote }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.code !== 0) {
+        console.error("Falha ao atualizar pacote:", data);
+        alert("Não foi possível atualizar o pacote.\nVeja o console para detalhes.");
+        return;
+      }
+      alert(`Pacote "${programa.nome_pacote}" atualizado com sucesso.`);
+    } catch (e) {
+      console.error("Erro ao chamar /install (update):", e);
+      alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
+    }
+  });
+
+  btnRemover.addEventListener("click", async () => {
+    if (!window.__IS_ANDISTRO__) return;
+    const ok = confirm(
+      `Tem certeza que deseja remover o pacote "${programa.nome_pacote}"?`
+    );
+    if (!ok) return;
+
+    try {
+      // aqui dá para depois trocar para /remove no daemon;
+      // por enquanto, reusa /install com apt-get remove se você criar isso no backend.
+      const res = await fetch("http://127.0.0.1:27777/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pkg: `-${programa.nome_pacote}` }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.code !== 0) {
+        console.error("Falha ao remover pacote:", data);
+        alert("Não foi possível remover o pacote.\nVeja o console para detalhes.");
+        return;
+      }
+      alert(`Pacote "${programa.nome_pacote}" removido (ou marcado para remoção).`);
+    } catch (e) {
+      console.error("Erro ao chamar /install (remove):", e);
+      alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
     }
   });
 
@@ -70,9 +237,10 @@ function montarPagina(programa) {
 async function carregarDescricaoCard(programa, card) {
   const pDesc = card.querySelector(".card-desc");
 
+  // 1) tenta via Debian stable
   try {
     const targetUrl =
-      `https://packages.debian.org/trixie/${programa.nome_pacote}`;
+      `https://packages.debian.org/stable/${programa.nome_pacote}`;
     const proxiedUrl =
       `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
@@ -91,21 +259,41 @@ async function carregarDescricaoCard(programa, card) {
     let texto = p ? p.textContent.replace(/\s+/g, " ").trim() : "";
 
     if (!texto) {
-      texto = "Descrição do pacote não encontrada.";
+      throw new Error("Texto vazio na página Debian");
     } else if (texto.length > 400) {
       texto = texto.slice(0, 397) + "...";
     }
 
     pDesc.textContent = texto;
+    return;
   } catch (e) {
-    console.error("Erro ao carregar descrição", e);
-    pDesc.textContent = "Descrição do pacote ainda não disponível.";
+    console.error("Erro ao carregar descrição no site Debian", e);
   }
+
+  // 2) fallback via daemon APT
+  try {
+    const textoApt = await obterDescricaoViaDaemon(programa.nome_pacote);
+    if (textoApt) {
+      const texto =
+        textoApt.length > 400
+          ? textoApt.slice(0, 397) + "..."
+          : textoApt;
+      pDesc.textContent = texto;
+      return;
+    }
+  } catch (e) {
+    console.error("Erro ao carregar descrição via daemon", e);
+  }
+
+  // 3) fallback final
+  pDesc.textContent = "Descrição do pacote ainda não disponível.";
 }
 
 // --- carrossel ---
 async function montarCarrossel(programa) {
   const carrossel = document.getElementById("carrossel");
+  if (!carrossel) return;
+
   carrossel.innerHTML =
     '<div class="carrossel-loading">Carregando screenshots...</div>';
 
@@ -123,7 +311,7 @@ async function montarCarrossel(programa) {
     const doc = parser.parseFromString(html, "text/html");
 
     const links = [];
-    doc.querySelectorAll('a[href^="/screenshot/"]').forEach(a => {
+    doc.querySelectorAll('a[href^="/screenshot/"]').forEach((a) => {
       const href = a.getAttribute("href");
       if (href && href.includes(programa.nome_pacote)) {
         links.push(`https://screenshots.debian.net${href}`);
@@ -139,7 +327,7 @@ async function montarCarrossel(programa) {
     const inner = document.createElement("div");
     inner.className = "carrossel-inner";
 
-    links.slice(0, 8).forEach(link => {
+    links.slice(0, 8).forEach((link) => {
       const item = document.createElement("div");
       item.className = "carrossel-item";
       item.innerHTML =
