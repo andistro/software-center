@@ -15,9 +15,12 @@ let pacotesComUpdate = new Set();
 // --------- helpers daemon ---------
 
 async function carregarInstaladosENovos() {
+  // zera sempre que for carregar
+  pacotesInstalados = new Set();
+  pacotesComUpdate = new Set();
+
   if (!window.__IS_ANDISTRO__) {
-    pacotesInstalados = new Set();
-    pacotesComUpdate = new Set();
+    console.log("Não é AnDistro, pulando status APT.");
     return;
   }
 
@@ -26,8 +29,10 @@ async function carregarInstaladosENovos() {
     const resInst = await fetch("http://127.0.0.1:27777/installed-names");
     if (resInst.ok) {
       const dataInst = await resInst.json();
+      console.log("installed-names bruto:", dataInst);
       const names = dataInst.packages || [];
       pacotesInstalados = new Set(names);
+      console.log("Set pacotesInstalados:", pacotesInstalados);
     } else {
       pacotesInstalados = new Set();
     }
@@ -36,8 +41,10 @@ async function carregarInstaladosENovos() {
     const resUpd = await fetch("http://127.0.0.1:27777/updates");
     if (resUpd.ok) {
       const dataUpd = await resUpd.json();
+      console.log("updates brutos:", dataUpd);
       const updates = dataUpd.updates || [];
       pacotesComUpdate = new Set(updates.map((u) => u.nome_pacote));
+      console.log("Set pacotesComUpdate:", pacotesComUpdate);
     } else {
       pacotesComUpdate = new Set();
     }
@@ -103,13 +110,23 @@ function montarPagina(programa) {
   const card = document.createElement("div");
   card.className = "card";
 
+  // normaliza nome (caso um dia venha com sufixo de arch tipo :amd64)
+  const nomePacote = (programa.nome_pacote || "").split(":")[0];
+
+  console.log(
+    "Checando instalação de:",
+    nomePacote,
+    "no Set pacotesInstalados:",
+    pacotesInstalados
+  );
+
   const jaInstalado =
     pacotesInstalados instanceof Set &&
-    pacotesInstalados.has(programa.nome_pacote);
+    pacotesInstalados.has(nomePacote);
 
   const temUpdate =
     pacotesComUpdate instanceof Set &&
-    pacotesComUpdate.has(programa.nome_pacote);
+    pacotesComUpdate.has(nomePacote);
 
   card.innerHTML = `
     <div class="card-header">
@@ -142,7 +159,7 @@ function montarPagina(programa) {
     });
   } else {
     if (!jaInstalado) {
-      // não instalado: só faz sentido mostrar instalar (no topo da página você ainda tem botão instalar global)
+      // não instalado
       btnAbrir.disabled = true;
       btnRemover.disabled = true;
       btnAtualizar.disabled = true;
@@ -157,6 +174,8 @@ function montarPagina(programa) {
         btnAtualizar.disabled = false;
         btnAtualizar.title = "";
       } else {
+        // se quiser esconder de vez:
+        // btnAtualizar.style.display = "none";
         btnAtualizar.disabled = true;
         btnAtualizar.title = "Nenhuma atualização disponível.";
       }
@@ -165,12 +184,12 @@ function montarPagina(programa) {
 
   // ações
   btnAbrir.addEventListener("click", async () => {
-    if (!window.__IS_ANDISTRO__) return;
+    if (!window.__IS_ANDISTRO__ || btnAbrir.disabled) return;
     try {
       const res = await fetch("http://127.0.0.1:27777/open", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pkg: programa.nome_pacote }),
+        body: JSON.stringify({ pkg: nomePacote }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
@@ -189,7 +208,7 @@ function montarPagina(programa) {
       const res = await fetch("http://127.0.0.1:27777/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pkg: programa.nome_pacote }),
+        body: JSON.stringify({ pkg: nomePacote }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.code !== 0) {
@@ -199,7 +218,7 @@ function montarPagina(programa) {
         );
         return;
       }
-      alert(`Pacote "${programa.nome_pacote}" atualizado com sucesso.`);
+      alert(`Pacote "${nomePacote}" atualizado com sucesso.`);
     } catch (e) {
       console.error("Erro ao chamar /install (update):", e);
       alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
@@ -209,7 +228,7 @@ function montarPagina(programa) {
   btnRemover.addEventListener("click", async () => {
     if (!window.__IS_ANDISTRO__ || btnRemover.disabled) return;
     const ok = confirm(
-      `Tem certeza que deseja remover o pacote "${programa.nome_pacote}"?`
+      `Tem certeza que deseja remover o pacote "${nomePacote}"?`
     );
     if (!ok) return;
 
@@ -217,7 +236,7 @@ function montarPagina(programa) {
       const res = await fetch("http://127.0.0.1:27777/remove", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pkg: programa.nome_pacote }),
+        body: JSON.stringify({ pkg: nomePacote }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.code !== 0) {
@@ -227,7 +246,7 @@ function montarPagina(programa) {
         );
         return;
       }
-      alert(`Pacote "${programa.nome_pacote}" removido com sucesso.`);
+      alert(`Pacote "${nomePacote}" removido com sucesso.`);
     } catch (e) {
       console.error("Erro ao chamar /remove:", e);
       alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
