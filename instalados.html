@@ -36,30 +36,30 @@
     <body>
         <div class="app">
             <aside class="menu">
-                <a href="index.html">
+                <a href="/">
                     <div class="logo">
                         <img src="res/img/ic_logo.svg" alt="Início">
                     </div>
                 </a>
 
-                <a href="index.html">
+                <a href="/">
                     <button class="menu-btn">
-                        <img src="res/img/ic_home.svg" alt="Início">
-                        <span>Inicio</span>
+                        <img src="res/img/ic_home_active.svg" alt="Início">
+                        <span data-i18n="navigation.home">Início</span>
                     </button>
                 </a>
 
                 <a href="#">
                     <button class="menu-btn active">
-                        <img src="res/img/ic_apps_active.svg" alt="Aplicativos">
-                        <span>Instalados</span>
+                        <img src="res/img/ic_apps.svg" alt="Aplicativos">
+                        <span data-i18n="navigation.installed">Instalados</span>
                     </button>
                 </a>
 
                 <a href="atualizacoes.html">
                     <button class="menu-btn">
                         <img src="res/img/ic_update.svg" alt="Atualizações">
-                        <span>Procurar atualizações</span>
+                        <span data-i18n="navigation.search_updates">Procurar atualizações</span>
                     </button>
                 </a>
             </aside>
@@ -78,6 +78,7 @@
                 </section>
             </section>
         </div>
+        <script src="i18n.js"></script>
         <script src="detect.js"></script>
         <script src="instalados.js"></script>
         <script>
@@ -125,5 +126,52 @@
                 }
             }
         </script>
+        <script>
+            (async function i18nInit() {
+                console.log('🌐 Lang detectado:', i18n.getLanguage());
+
+                await i18n.loadLanguages({
+                    'pt-BR': './translations/pt-br.json',
+                    'en-US': './translations/en-us.json'
+                });
+
+                i18n.translatePage();
+
+                // --- Propagar ?lang= para todos os links internos ---
+                const urlParams = new URLSearchParams(window.location.search);
+                const langParam = urlParams.get('lang');
+
+                if (langParam) {
+                    const links = document.querySelectorAll('a[href]');
+                    links.forEach(a => {
+                        const href = a.getAttribute('href');
+
+                        // Ignora anchors, javascript:, mailto:, links externos absolutos, etc.
+                        if (
+                            href.startsWith('#') ||
+                            href.startsWith('javascript:') ||
+                            href.startsWith('mailto:') ||
+                            href.startsWith('tel:') ||
+                            href.startsWith('http://') ||
+                            href.startsWith('https://')
+                        ) {
+                            return;
+                        }
+
+                        const url = new URL(href, window.location.origin);
+                        const params = new URLSearchParams(url.search);
+
+                        // Só sobrescreve se ainda não tiver lang
+                        if (!params.has('lang')) {
+                            params.set('lang', langParam);
+                        }
+
+                        url.search = params.toString();
+                        a.setAttribute('href', url.pathname + (url.search ? '?' + url.searchParams.toString() : ''));
+                    });
+                }
+            })();
+        </script>
+
     </body>
 </html>

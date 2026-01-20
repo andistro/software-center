@@ -41,13 +41,12 @@ body {
     bottom: 0;
     background-color: #4873CA;
     color: #FFFFFF;
-    padding: 8px;
-    font-size: 12px;
+    padding: 24px 8px;
+    font-size: 24px;
     text-align: center;
     z-index: 9999;
 }
 
-/* container principal (máx 360px) */
 .app {
     width: 100%;
     background-color: var(--bg);
@@ -115,6 +114,7 @@ body {
     flex: 1;
     padding: 16px;
     max-width: 720px;
+    margin-bottom: 64px;
 }
 
 /* barra de pesquisa */
@@ -126,10 +126,10 @@ body {
 
 .pesquisa input {
     flex: 1;
-    height: 40px;        
+    height: 40px;       
     border-radius: 8px;
     border: 1px solid #ccc;
-    padding: 8px;
+    padding: 8px 16px;
     font-size: 16px;
 }
 
@@ -173,12 +173,13 @@ body {
     gap: 8px;
     margin-bottom: 16px;
     padding: 8px;
-    align-items: center;     /* centro vertical */
+    align-items: top;     /* centro vertical */
     justify-content: flex-start; /* alinhado à esquerda */
 }
 
 .card-info {
     display: flex;
+    gap: 2px;
     flex-direction: column;
     justify-content: center; /* texto centralizado verticalmente no bloco */
 }
@@ -259,4 +260,74 @@ body {
     max-height: 320px;          /* garante o limite */
     border-radius: 4px;
     object-fit: cover;
+}
+
+
+/* Até 375px de largura (inclusive) */
+@media (max-width: 375px) {
+
+    /* menu lateral */
+    .menu {
+        padding: 8px;
+    }
+
+    /* botões menu */
+    .menu-btn {
+        padding: 4px;
+    }
+
+    .menu-btn img{
+        width: 28px;
+    }
+
+    .menu-btn span {
+        font-size: 10px;
+    }
+
+
+    /* área de conteúdo */
+    .main{
+        padding: 18px 16px;
+    }
+
+    .content {
+        padding: 8px;
+        padding-left: 0px;
+    }
+
+
+    /* seção recomendados */
+
+    /* card do app */
+    .card {
+        padding: 8px;
+    }
+
+    .card-header,
+    .card-actions{
+        padding: 0px;
+    }
+
+    .icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .card-title {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .card-desc {
+        font-size: 12px;
+    }
+
+    .card-actions {
+        gap: 8px;
+    }
+
+    .card-actions .btn {
+        font-size: 12px;
+    }
+
 }

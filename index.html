@@ -3,16 +3,31 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-        <title id="titulo">Central de aplicativos</title>
+        <title id="titulo" data-i18n="index.title">Central de aplicativos</title>
         <meta name="description" content="Encontre, baixe, atualize aplicativos para o sistema">
         <link rel="stylesheet" href="res/styles/index.css">
         <link rel="manifest" href="res/manifest.json">
         <link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Central de aplicativos Andistro">
 
+        <!--[LANG]-->
+        <!-- Versão padrão (x-default, recomendada para quem não tem idioma definido) -->
+        <link rel="alternate" hreflang="x-default" href="https://andistro.github.io/software-center/">
+            <!-- Versão em português do Brasil -->
+        <link rel="alternate" hreflang="pt-BR" href="https://andistro.github.io/software-center/?lang=pt-BR">
+        <!-- Versão em inglês (global) -->
+        <link rel="alternate" hreflang="en-US" href="https://andistro.github.io/software-center/?lang=en-US">
+
         <!--[OG TAGS]-->
-        <meta property="og:site_name" content="Central de aplicativos AnDistro">
+        <meta property="og:site_name" data-i18n="index.title" data-i18n-attr="content" content="Central de aplicativos AnDistro">
         <meta property="og:type" content="website">
-        <meta property="og:url" content="https://andistro.github.io/software-center"> <!--URL do site-->
+        <!--URL do site-->
+        <meta property="og:url" content="https://andistro.github.io/software-center">
+        <!-- Versão pt-BR (padrão ou ?lang=pt-br) -->
+        <meta property="og:locale" content="pt_BR">
+        <meta property="og:url" content="https://andistro.github.io/software-center/?lang=pt-br">
+        <!-- Versão en-US (?lang=en-us) -->
+        <meta property="og:locale:alternate" content="en_US" />
+        <meta property="og:url:alternate" content="https://andistro.github.io/software-center/?lang=en-us" />
 
         <!--[MICROSOFT TAGS]-->
         <meta name="msapplication-TileColor" content=""> <!--Cor HEX-->
@@ -45,42 +60,43 @@
                 <a href="#">
                     <button class="menu-btn active">
                         <img src="res/img/ic_home_active.svg" alt="Início">
-                        <span>Inicio</span>
+                        <span data-i18n="navigation.home">Início</span>
                     </button>
                 </a>
 
                 <a href="instalados.html">
                     <button class="menu-btn">
                         <img src="res/img/ic_apps.svg" alt="Aplicativos">
-                        <span>Instalados</span>
+                        <span data-i18n="navigation.installed">Instalados</span>
                     </button>
                 </a>
 
                 <a href="atualizacoes.html">
                     <button class="menu-btn">
                         <img src="res/img/ic_update.svg" alt="Atualizações">
-                        <span>Procurar atualizações</span>
+                        <span data-i18n="navigation.search_updates">Procurar atualizações</span>
                     </button>
                 </a>
             </aside>
 
             <section class="content">
                 <form class="pesquisa" id="search-form">
-                    <input id="search-input" type="text" placeholder="Faça uma pesquisa">
+                    <input id="search-input" type="text" data-i18n="common.search_placeholder" data-i18n-attr="placeholder" placeholder="Faça uma pesquisa">
                     <button id="search-btn" class="btn-search" type="submit">
                         <img src="res/img/ic_search.svg" alt="Buscar">
                     </button>
                 </form>
 
                 <section class="main">
-                    <h2 class="title">Recomendados</h2>
+                    <h2 class="title" data-i18n="navigation.recommended">Recomendados</h2>
                     <div id="cards-container"></div>
                 </section>
             </section>
         </div>
+        <script src="i18n.js"></script>
         <script src="detect.js"></script>
         <script src="recomendados.js"></script>
-                <script>
+        <script>
             // para as pesquisas
             const form = document.getElementById("search-form");
             const input = document.getElementById("search-input");
@@ -124,5 +140,52 @@
                     alert("Erro ao solicitar instalação no AnDistro.");
                 }
             }
+        </script>
+        
+        <script>
+            (async function i18nInit() {
+                console.log('🌐 Lang detectado:', i18n.getLanguage());
+
+                await i18n.loadLanguages({
+                    'pt-BR': './translations/pt-br.json',
+                    'en-US': './translations/en-us.json'
+                });
+
+                i18n.translatePage();
+
+                // --- Propagar ?lang= para todos os links internos ---
+                const urlParams = new URLSearchParams(window.location.search);
+                const langParam = urlParams.get('lang');
+
+                if (langParam) {
+                    const links = document.querySelectorAll('a[href]');
+                    links.forEach(a => {
+                        const href = a.getAttribute('href');
+
+                        // Ignora anchors, javascript:, mailto:, links externos absolutos, etc.
+                        if (
+                            href.startsWith('#') ||
+                            href.startsWith('javascript:') ||
+                            href.startsWith('mailto:') ||
+                            href.startsWith('tel:') ||
+                            href.startsWith('http://') ||
+                            href.startsWith('https://')
+                        ) {
+                            return;
+                        }
+
+                        const url = new URL(href, window.location.origin);
+                        const params = new URLSearchParams(url.search);
+
+                        // Só sobrescreve se ainda não tiver lang
+                        if (!params.has('lang')) {
+                            params.set('lang', langParam);
+                        }
+
+                        url.search = params.toString();
+                        a.setAttribute('href', url.pathname + (url.search ? '?' + url.searchParams.toString() : ''));
+                    });
+                }
+            })();
         </script>
 </html>

@@ -36,30 +36,30 @@
     <body>
         <div class="app">
             <aside class="menu">
-                <a href="index.html">
+                <a href="/">
                     <div class="logo">
                         <img src="res/img/ic_logo.svg" alt="Início">
                     </div>
                 </a>
 
-                <a href="index.html">
+                <a href="/">
                     <button class="menu-btn">
-                        <img src="res/img/ic_home.svg" alt="Início">
-                        <span>Inicio</span>
+                        <img src="res/img/ic_home_active.svg" alt="Início">
+                        <span data-i18n="navigation.home">Início</span>
                     </button>
                 </a>
 
                 <a href="instalados.html">
-                    <button class="menu-btn">
+                    <button class="menu-btn active">
                         <img src="res/img/ic_apps.svg" alt="Aplicativos">
-                        <span>Instalados</span>
+                        <span data-i18n="navigation.installed">Instalados</span>
                     </button>
                 </a>
 
                 <a href="#">
                     <button class="menu-btn active">
-                        <img src="res/img/ic_update_active.svg" alt="Atualizações">
-                        <span>Procurar atualizações</span>
+                        <img src="res/img/ic_update.svg" alt="Atualizações">
+                        <span data-i18n="navigation.search_updates">Procurar atualizações</span>
                     </button>
                 </a>
             </aside>
@@ -72,13 +72,14 @@
                     </button>
                 </form>
 
-                <!--recomendados.js-->
+
                 <section class="main">
                     <h2 class="title">Atualizações</h2>
                     <div id="cards-container"></div>
                 </section>
             </section>
         </div>
+        <script src="i18n.js"></script>
         <script src="detect.js"></script>
         <script src="atualizacoes.js"></script>
         <script>
@@ -101,6 +102,76 @@
             const qs = currentParams.toString();
             window.location.href = `resultados.html?${qs}`;
             });
+
+            async function instalarPacote(nomePacote) {
+                if (!window.__IS_ANDISTRO__) {
+                    // aqui você pode trocar alert por um toast/overlay depois
+                    alert("Instalação disponível apenas no AnDistro.");
+                    return;
+                }
+
+                try {
+                const res = await fetch("http://127.0.0.1:27777/install", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pkg: nomePacote })
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                // opcional: tratar resposta, exibir status, etc.
+                // const data = await res.json();
+                // console.log(data);
+                } catch (e) {
+                    console.error("Erro ao solicitar instalação", e);
+                    alert("Erro ao solicitar instalação no AnDistro.");
+                }
+            }
+        </script>
+        <script>
+            (async function i18nInit() {
+                console.log('🌐 Lang detectado:', i18n.getLanguage());
+
+                await i18n.loadLanguages({
+                    'pt-BR': './translations/pt-br.json',
+                    'en-US': './translations/en-us.json'
+                });
+
+                i18n.translatePage();
+
+                // --- Propagar ?lang= para todos os links internos ---
+                const urlParams = new URLSearchParams(window.location.search);
+                const langParam = urlParams.get('lang');
+
+                if (langParam) {
+                    const links = document.querySelectorAll('a[href]');
+                    links.forEach(a => {
+                        const href = a.getAttribute('href');
+
+                        // Ignora anchors, javascript:, mailto:, links externos absolutos, etc.
+                        if (
+                            href.startsWith('#') ||
+                            href.startsWith('javascript:') ||
+                            href.startsWith('mailto:') ||
+                            href.startsWith('tel:') ||
+                            href.startsWith('http://') ||
+                            href.startsWith('https://')
+                        ) {
+                            return;
+                        }
+
+                        const url = new URL(href, window.location.origin);
+                        const params = new URLSearchParams(url.search);
+
+                        // Só sobrescreve se ainda não tiver lang
+                        if (!params.has('lang')) {
+                            params.set('lang', langParam);
+                        }
+
+                        url.search = params.toString();
+                        a.setAttribute('href', url.pathname + (url.search ? '?' + url.searchParams.toString() : ''));
+                    });
+                }
+            })();
         </script>
     </body>
 </html>

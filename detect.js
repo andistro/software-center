@@ -30,7 +30,7 @@
 
   const banner = document.createElement("div");
   banner.id = bannerId;
-  banner.textContent = "Esta página funciona no AnDistro.";
+  banner.textContent = i18n.t('common.andistro_only');
 
   Object.assign(banner.style, {
     position: "fixed",
@@ -39,8 +39,8 @@
     bottom: "0",
     backgroundColor: "#4873CA",
     color: "#FFFFFF",
-    padding: "8px",
-    fontSize: "12px",
+    padding: "16px",
+    fontSize: "16px",
     textAlign: "center",
     zIndex: "9999",
   });

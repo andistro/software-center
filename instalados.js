@@ -1,15 +1,28 @@
-// instalados.js
+// instalados.js - Com suporte automático a i18n
 
 async function carregarInstalados() {
+  // Aguarda i18n estar carregado
+  await new Promise((resolve) => {
+    if (window.i18n && window.i18n.loadedLanguages.size > 0) {
+      resolve();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (window.i18n && window.i18n.loadedLanguages.size > 0) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+    }
+  });
+
   const container = document.getElementById("cards-container");
 
   if (!window.__IS_ANDISTRO__) {
-    container.innerHTML =
-      "<p>Listagem de instalados disponível apenas no AnDistro.</p>";
+    container.innerHTML = `<p>${i18n.t('instalados.andistro_only')}</p>`;
     return;
   }
 
-  container.innerHTML = "<p>Carregando aplicativos instalados...</p>";
+  container.innerHTML = `<p>${i18n.t('common.loading')}</p>`;
 
   try {
     const res = await fetch("http://127.0.0.1:27777/installed");
@@ -24,7 +37,8 @@ async function carregarInstalados() {
     if (apps.length) {
       const tituloApps = document.createElement("h3");
       tituloApps.className = "title";
-      tituloApps.textContent = "Aplicativos";
+      tituloApps.setAttribute("data-i18n", "instalados.applications");
+      tituloApps.textContent = i18n.t('instalados.applications');
       container.appendChild(tituloApps);
 
       apps.forEach((pkg) => container.appendChild(criarCard(pkg)));
@@ -33,19 +47,19 @@ async function carregarInstalados() {
     if (addons.length) {
       const tituloAddons = document.createElement("h3");
       tituloAddons.className = "title";
-      tituloAddons.textContent = "Extensões e complementos";
+      tituloAddons.setAttribute("data-i18n", "instalados.extensions");
+      tituloAddons.textContent = i18n.t('instalados.extensions');
       container.appendChild(tituloAddons);
 
       addons.forEach((pkg) => container.appendChild(criarCard(pkg)));
     }
 
     if (!apps.length && !addons.length) {
-      container.innerHTML = "<p>Nenhum pacote instalado encontrado.</p>";
+      container.innerHTML = `<p>${i18n.t('instalados.no_packages')}</p>`;
     }
   } catch (e) {
     console.error("Erro ao carregar instalados", e);
-    container.innerHTML =
-      "<p>Erro ao carregar aplicativos instalados.</p>";
+    container.innerHTML = `<p>${i18n.t('instalados.error_loading')}</p>`;
   }
 }
 
@@ -55,57 +69,33 @@ function criarCard(pkg) {
 
   const nome = pkg.nome_programa || pkg.nome_pacote;
   const pacote = pkg.nome_pacote;
+  const desc = pkg.descricao || i18n.t('common.no_description');
 
   card.innerHTML = `
     <div class="card-header">
-      <img class="icon"
-           src="http://127.0.0.1:27777/icon?pkg=${encodeURIComponent(pacote)}"
-           alt="${nome}"
-           onerror="this.onerror=null;this.src='res/img/alt_package/${pacote}.svg';this.onerror=function(){this.src='res/img/ic_broken.svg';};">
-      <div class="card-info">
-        <h3 class="card-title">${nome}</h3>
-        <p class="card-desc">${pkg.descricao || ""}</p>
-      </div>
+      <h3 class="card-title">${nome}</h3>
     </div>
-    <div class="card-actions">
-      <button class="btn btn-alt">Detalhes</button>
-      <button class="btn btn-install">Abrir</button>
+    <div class="card-body">
+      <p class="card-description">${desc}</p>
+    </div>
+    <div class="card-footer">
+      <button class="btn-primary" onclick="irParaDetalhes('${pacote}')">
+        ${i18n.t('common.open')}
+      </button>
     </div>
   `;
-
-  const btnDetalhes = card.querySelector(".btn-alt");
-  btnDetalhes.addEventListener("click", () => {
-    const base = "detalhes.html";
-    const currentParams = new URLSearchParams(window.location.search);
-    currentParams.set("pkg", pacote);
-    const qs = currentParams.toString();
-    window.location.href = `${base}?${qs}`;
-  });
-
-  const btnAbrir = card.querySelector(".btn-install");
-  btnAbrir.addEventListener("click", async () => {
-    try {
-      const res = await fetch("http://127.0.0.1:27777/open", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pkg: pacote }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || !data.ok) {
-        console.error("Falha ao abrir app:", data);
-        alert("Não foi possível abrir o aplicativo.\nVeja o console para detalhes.");
-        return;
-      }
-
-      console.log("Abrindo app:", data.cmd);
-    } catch (e) {
-      console.error("Erro ao chamar /open:", e);
-      alert("Erro ao abrir o aplicativo.\nVeja o console para detalhes.");
-    }
-  });
 
   return card;
 }
 
+function irParaDetalhes(nomePacote) {
+  window.location.href = `detalhes.html?pkg=${encodeURIComponent(nomePacote)}`;
+}
+
+// Executa ao carregar a página
 carregarInstalados();
+
+// --------- Listener para mudança de idioma ---------
+i18n.onLanguageChange(() => {
+  carregarInstalados();
+});

@@ -1,0 +1,21 @@
+{
+  "common": {
+    "search": "Search",
+    "install": "Install",
+    "details": "Details",
+    "open": "Open",
+    "loading": "Loading...",
+    "error": "Error",
+    "search_placeholder": "Search",
+    "andistro_only": "This page is designed to work inside AnDistro."
+  },
+  "index": {
+    "title": "AnDistro Apps Center"
+  },
+  "navigation": {
+    "home": "Home",
+    "installed": "Installed",
+    "search_updates": "Check for updates",
+    "recommended": "Recommended"
+  }
+}

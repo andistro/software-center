@@ -1,0 +1,28 @@
+{
+  "common": {
+    "search": "Buscar",
+    "install": "Instalar",
+    "uninstall": "Desinstalar",
+    "details": "Detalhes",
+    "open": "Abrir",
+    "update": "Atualizar",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "search_placeholder": "Faça uma pesquisa",
+    "andistro_only": "Esta página foi feita para funcionar no AnDistro."
+  },
+  "index": {
+    "title": "Central de Aplicativos AnDistro"
+  },
+  "resultados":{
+    "apt_only": "A busca por pacotes APT só funciona dentro do AnDistro.",
+    "no_packages_found": "Nenhum pacote encontrado.",
+    "error_searching": "Erro ao buscar pacotes. Tente novamente mais tarde."
+  },
+  "navigation": {
+    "home": "Início",
+    "installed": "Instalados",
+    "search_updates": "Procurar atualizações",
+    "recommended": "Recomendados"
+  }
+}

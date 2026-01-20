@@ -21,8 +21,8 @@ async function carregarRecomendados() {
         </div>
       </div>
       <div class="card-actions">
-        <button class="btn btn-alt">Detalhes</button>
-        <button class="btn btn-install">Instalar</button>
+        <button class="btn btn-alt" data-i18n="common.details">Detalhes</button>
+        <button class="btn btn-install" data-i18n="common.install">Instalar</button>
       </div>
     `;
     container.appendChild(card);
@@ -49,41 +49,60 @@ async function carregarRecomendados() {
 
 // --- descrição via packages.debian.org + corsproxy.io ---
 async function carregarDescricaoCard(prog, card) {
-  const pDesc = card.querySelector(".card-desc");
+    const pDesc = card.querySelector(".card-desc");
 
-  try {
-    const targetUrl =
-      `https://packages.debian.org/trixie/${prog.nome_pacote}`;
-    const proxiedUrl =
-      `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+    try {
+        // Descobre idioma atual do i18n
+        const lang = (typeof i18n !== "undefined" ? i18n.getLanguage() : "pt-BR");
 
-    const res = await fetch(proxiedUrl);
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+        // Mapeia para código de idioma usado pelo packages.debian.org
+        // pt-BR → pt-br, en-US → en, fallback en
+        let debLang = "en";
+        if (lang === "pt-BR") {
+            debLang = "pt-br";
+        } else if (lang === "en-US") {
+            debLang = "en";
+        }
+
+        // https://packages.debian.org/{debLang}/trixie/{pacote}
+        const targetUrl =
+            `https://packages.debian.org/${debLang}/stable/${prog.nome_pacote}`;
+        const proxiedUrl =
+            `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
+        const res = await fetch(proxiedUrl);
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        let p =
+            doc.querySelector("h2 + p, h3 + p") ||
+            doc.querySelector("h1 + p") ||
+            doc.querySelector("p");
+
+        let texto = p ? p.textContent.replace(/\s+/g, " ").trim() : "";
+
+        if (!texto) {
+            texto = (debLang === "pt-br")
+                ? "Descrição do pacote não encontrada."
+                : "Package description not found.";
+        } else if (texto.length > 160) {
+            texto = texto.slice(0, 157) + "...";
+        }
+
+        pDesc.textContent = texto;
+    } catch (e) {
+        console.error("Erro ao carregar descrição para", prog.nome_pacote, e);
+        pDesc.textContent =
+            (i18n && i18n.getLanguage() === "en-US")
+                ? "Package description not available yet."
+                : "Descrição do pacote ainda não disponível.";
     }
-
-    const html = await res.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-
-    let p =
-      doc.querySelector("h2 + p, h3 + p") ||
-      doc.querySelector("h1 + p") ||
-      doc.querySelector("p");
-
-    let texto = p ? p.textContent.replace(/\s+/g, " ").trim() : "";
-
-    if (!texto) {
-      texto = "Descrição do pacote não encontrada.";
-    } else if (texto.length > 160) {
-      texto = texto.slice(0, 157) + "...";
-    }
-
-    pDesc.textContent = texto;
-  } catch (e) {
-    console.error("Erro ao carregar descrição para", prog.nome_pacote, e);
-    pDesc.textContent = "Descrição do pacote ainda não disponível.";
-  }
 }
+
 
 carregarRecomendados();

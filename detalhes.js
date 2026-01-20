@@ -140,9 +140,9 @@ function montarPagina(programa) {
       </div>
     </div>
     <div class="card-actions">
-      <button class="btn btn-install btn-open">Abrir</button>
-      <button class="btn btn-install btn-update">Atualizar</button>
-      <button class="btn btn-install btn-remove">Desinstalar</button>
+      <button class="btn btn-install btn-open" data-i18n="common.open">Abrir</button>
+      <button class="btn btn-install btn-update" data-i18n="common.update">Atualizar</button>
+      <button class="btn btn-install btn-remove" data-i18n="common.uninstall">Desinstalar</button>
     </div>
   `;
   container.appendChild(card);
@@ -258,10 +258,23 @@ function montarPagina(programa) {
 async function carregarDescricaoCard(programa, card) {
   const pDesc = card.querySelector(".card-desc");
 
-  // 1) via Debian stable
+  // Descobre idioma atual do i18n
+  const lang = (typeof i18n !== "undefined" ? i18n.getLanguage() : "pt-BR");
+
+  // Mapeia para código de idioma usado pelo packages.debian.org
+  // pt-BR → pt-br, en-US → en, fallback en
+  let debLang = "en";
+  if (lang === "pt-BR") {
+    debLang = "pt-br";
+  } else if (lang === "en-US") {
+    debLang = "en";
+  }
+
+  // 1) via Debian (stable) no idioma detectado
   try {
+    // ex: https://packages.debian.org/pt-br/stable/firefox-esr
     const targetUrl =
-      `https://packages.debian.org/stable/${programa.nome_pacote}`;
+      `https://packages.debian.org/${debLang}/stable/${programa.nome_pacote}`;
     const proxiedUrl =
       `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
@@ -291,7 +304,7 @@ async function carregarDescricaoCard(programa, card) {
     console.error("Erro ao carregar descrição no site Debian", e);
   }
 
-  // 2) fallback via daemon APT
+  // 2) fallback via daemon APT (sem idioma, vem como estiver no sistema)
   try {
     const textoApt = await obterDescricaoViaDaemon(programa.nome_pacote);
     if (textoApt) {
@@ -306,9 +319,13 @@ async function carregarDescricaoCard(programa, card) {
     console.error("Erro ao carregar descrição via daemon", e);
   }
 
-  // 3) fallback final
-  pDesc.textContent = "Descrição do pacote ainda não disponível.";
+  // 3) fallback final por idioma
+  pDesc.textContent =
+    (lang === "en-US")
+      ? "Package description not available yet."
+      : "Descrição do pacote ainda não disponível.";
 }
+
 
 // --- carrossel ---
 async function montarCarrossel(programa) {
