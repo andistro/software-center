@@ -1,4 +1,5 @@
 // detalhes.js
+// 18:36
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
