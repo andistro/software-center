@@ -1,4 +1,4 @@
-// resultados.js - Com suporte automático a i18n
+// resultados.js
 
 const form = document.getElementById("search-form");
 const input = document.getElementById("search-input");
@@ -13,6 +13,7 @@ async function carregarPacotesInstalados() {
     pacotesInstalados = new Set();
     return;
   }
+
   try {
     const res = await fetch("http://127.0.0.1:27777/installed-names");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -30,20 +31,6 @@ const params = new URLSearchParams(window.location.search);
 const qParam = params.get("q") || "";
 
 (async () => {
-  // Aguarda i18n estar carregado
-  await new Promise(resolve => {
-    if (window.i18n && window.i18n.loadedLanguages.size > 0) {
-      resolve();
-    } else {
-      const checkInterval = setInterval(() => {
-        if (window.i18n && window.i18n.loadedLanguages.size > 0) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 100);
-    }
-  });
-
   await carregarPacotesInstalados();
   if (qParam) {
     input.value = qParam;
@@ -70,13 +57,13 @@ function atualizarQueryString(termo) {
 
 // --------- busca via daemon AnDistro (APT) ---------
 async function buscar(termo) {
-  container.innerHTML = `<p>${i18n.t('common.loading')}</p>`;
+  container.innerHTML = "<p>Carregando resultados...</p>";
 
   try {
     // se não estiver no AnDistro, não dá para consultar APT
     if (window.__IS_ANDISTRO__ === false) {
-      container.innerHTML = `<p>${i18n.t('resultados.apt_only')}</p>`;
-      adicionarBannerArquitetura();
+      container.innerHTML =
+        "<p>A busca por pacotes APT só funciona dentro do AnDistro.</p>";
       return;
     }
 
@@ -85,14 +72,8 @@ async function buscar(termo) {
       await carregarPacotesInstalados();
     }
 
-    // Passa o idioma atual na URL para a API retornar descrições traduzidas
-    const currentLang = i18n.getLanguage();
     const url =
-      "http://127.0.0.1:27777/search?q=" +
-      encodeURIComponent(termo) +
-      "&lang=" +
-      encodeURIComponent(currentLang);
-
+      "http://127.0.0.1:27777/search?q=" + encodeURIComponent(termo);
     const res = await fetch(url);
     if (!res.ok) {
       throw new Error("HTTP " + res.status);
@@ -102,7 +83,7 @@ async function buscar(termo) {
     const itens = data.results || [];
 
     if (!itens.length) {
-      container.innerHTML = `<p>${i18n.t('resultados.no_packages_found')}</p>`;
+      container.innerHTML = "<p>Nenhum pacote encontrado.</p>";
       adicionarBannerArquitetura();
       return;
     }
@@ -112,7 +93,8 @@ async function buscar(termo) {
     adicionarBannerArquitetura();
   } catch (e) {
     console.error("Erro na busca", e);
-    container.innerHTML = `<p>${i18n.t('resultados.error_searching')}</p>`;
+    container.innerHTML =
+      "<p>Erro ao buscar pacotes. Tente novamente mais tarde.</p>";
     adicionarBannerArquitetura();
   }
 }
@@ -126,43 +108,102 @@ function montarCard(pkg) {
   const descCurta =
     pkg.descricao && pkg.descricao.length > 160
       ? pkg.descricao.slice(0, 157) + "..."
-      : pkg.descricao || i18n.t('common.no_description');
+      : pkg.descricao || "Sem descrição.";
 
   const jaInstalado =
     pacotesInstalados instanceof Set &&
     pacotesInstalados.has(pkg.nome_pacote);
 
-  const labelBotao = jaInstalado
-    ? i18n.t('common.open')
-    : i18n.t('common.install');
+  const labelBotao = jaInstalado ? "Abrir" : "Instalar";
 
   card.innerHTML = `
     <div class="card-header">
-      <h3 class="card-title">${nomeExibicao}</h3>
+      <img class="icon"
+           src="res/img/alt_package/${pkg.nome_pacote}.svg"
+           alt="${nomeExibicao}"
+           onerror="this.onerror=null;this.src='res/img/ic_broken.svg';">
+      <div class="card-info">
+        <h3 class="card-title">${nomeExibicao}</h3>
+        <p class="card-desc">${descCurta}</p>
+      </div>
     </div>
-    <div class="card-body">
-      <p class="card-description">${descCurta}</p>
-    </div>
-    <div class="card-footer">
-      <button class="btn-primary" onclick="irParaDetalhes('${nomeExibicao}')">${labelBotao}</button>
+    <div class="card-actions">
+      <button class="btn btn-alt">Detalhes</button>
+      <button class="btn btn-install">${labelBotao}</button>
     </div>
   `;
+
+  const btnDetalhes = card.querySelector(".btn-alt");
+  btnDetalhes.addEventListener("click", () => {
+    const base = "detalhes.html";
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.set("pkg", pkg.nome_pacote);
+    const qs = currentParams.toString();
+    window.location.href = `${base}?${qs}`;
+  });
+
+  const btnAcao = card.querySelector(".btn-install");
+  btnAcao.addEventListener("click", () => {
+    if (!window.__IS_ANDISTRO__) {
+      alert("Esta ação só funciona dentro do AnDistro.");
+      return;
+    }
+
+    if (
+      pacotesInstalados instanceof Set &&
+      pacotesInstalados.has(pkg.nome_pacote)
+    ) {
+      // já instalado → abrir
+      fetch("http://127.0.0.1:27777/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pkg: pkg.nome_pacote }),
+      })
+        .then((r) => r.json().catch(() => ({})))
+        .then((data) => {
+          if (!data.ok) {
+            console.error("Falha ao abrir app:", data);
+            alert("Não foi possível abrir o aplicativo.");
+          }
+        })
+        .catch((e) => {
+          console.error("Erro ao chamar /open:", e);
+          alert("Erro ao abrir o aplicativo.");
+        });
+    } else {
+      // não instalado → instalar
+      if (typeof instalarPacote === "function") {
+        instalarPacote(pkg.nome_pacote);
+      } else {
+        console.error("Função instalarPacote não encontrada.");
+      }
+    }
+  });
 
   container.appendChild(card);
 }
 
-function irParaDetalhes(nomePacote) {
-  window.location.href = `detalhes.html?pkg=${encodeURIComponent(nomePacote)}`;
-}
-
+// banner de "modo APT" / arquitetura (se quiser manter algo visual)
 function adicionarBannerArquitetura() {
-  // Implementação do banner de arquitetura (mantém a mesma lógica)
-}
+  const antigo = document.getElementById("arch-banner");
+  if (antigo) antigo.remove();
 
-// --------- Listener para mudança de idioma ---------
-i18n.onLanguageChange((newLang) => {
-  // Re-busca se houver termo atual
-  if (qParam) {
-    buscar(qParam);
-  }
-});
+  const banner = document.createElement("div");
+  banner.id = "arch-banner";
+
+  const texto = window.__IS_ANDISTRO__
+    ? "Busca APT via AnDistro ativa."
+    : "Tentando busca APT (certifique-se de estar no AnDistro).";
+
+  banner.textContent = texto;
+
+  banner.style.marginBottom = "16px";
+  banner.style.padding = "8px";
+  banner.style.borderRadius = "8px";
+  banner.style.backgroundColor = "#E0EFFE";
+  banner.style.border = "1px solid #89B4F3";
+  banner.style.fontSize = "12px";
+
+  const parent = container.parentElement;
+  parent.insertBefore(banner, container);
+}
