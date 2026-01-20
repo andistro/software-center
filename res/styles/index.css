@@ -7,6 +7,8 @@
     --btn-default-alt-hover: #2E768D;
     --btn-install: #4873CA;
     --btn-install-hover: #5C5CFF;
+    --btn-remove: #F04040;
+    --btn-remove-hover: #bf4040;
     --menu-button-active: #E0EFFE;
     --menu-border-active: #89B4F3;
     --menu-button-default: #F2F2F2;
@@ -205,7 +207,7 @@ body {
     padding: 8px;
 }
 
-.card-actions .btn {
+.btn {
     width: 100%;               /* button width 100% */
     font-size: 14px;
     font-weight: 600;
@@ -215,22 +217,37 @@ body {
     padding: 8px;
 }
 
- .card-actions .btn-alt {
+.btn:hover{
+    cursor: pointer;
+}
+
+.btn-alt {
     background-color: var(--btn-default-alt);
 }
 
-.card-actions .btn-alt:hover{
-    cursor: pointer;
+.btn-alt:hover{
     background-color: var(--btn-default-alt-hover);
 }
 
-.card-actions .btn-install {
+
+.btn-install,
+.btn-update,
+.btn-open {
     background-color: var(--btn-install);
 }
 
-.card-actions .btn-install:hover{
-    cursor: pointer;
+.btn-install:hover,
+.btn-open:hover,
+.btn-update:hover {
     background-color: var(--btn-install-hover);
+}
+
+.btn-remove {
+    background-color: var(--btn-remove);
+}
+
+.btn-remove:hover{
+    background-color: var(--btn-remove-hover);
 }
 
 .carrossel {

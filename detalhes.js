@@ -142,9 +142,9 @@ function montarPagina(programa) {
             </div>
         </div>
         <div class="card-actions card-actions-main">
-            <button class="btn btn-install btn-open" data-i18n="common.open">Abrir</button>
-            <button class="btn btn-install btn-remove" data-i18n="common.uninstall">Desinstalar</button>
-            <button class="btn btn-install btn-install" data-i18n="common.install">Instalar</button>
+            <button class="btn btn-open" data-i18n="common.open">Abrir</button>
+            <button class="btn btn-remove" data-i18n="common.uninstall">Desinstalar</button>
+            <button class="btn btn-install" data-i18n="common.install">Instalar</button>
         </div>
     `;
     container.appendChild(card);
@@ -162,7 +162,7 @@ function montarPagina(programa) {
         updateActions = document.createElement("div");
         updateActions.className = "card-actions card-actions-update";
         updateActions.innerHTML = `
-            <button class="btn btn-install btn-update" data-i18n="common.update">Atualizar</button>
+            <button class="btn btn-update" data-i18n="common.update">Atualizar</button>
         `;
         // insere ANTES do bloco principal
         card.insertBefore(updateActions, mainActions);
