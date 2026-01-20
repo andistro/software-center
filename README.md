@@ -31,7 +31,7 @@ cd ~/.andistro-software-center
 python3 -m venv .
 
 # ativar (opcional, já vamos usar o bin/ direto)
-source bin/activate
+ls
 
 # instalar Flask e Flask-CORS na venv
 ~/.andistro-software-center/bin/pip install flask flask-cors
@@ -43,8 +43,7 @@ source bin/activate
 cd ~/.andistro-software-center/app
 
 # exemplo usando curl (ajuste a URL do seu repositório)
-curl -o andistro_software_center.py \
-  https://raw.githubusercontent.com/andistro/software-center/main/path/andistro_software_center.py
+curl -o andistro_software_center.py https://raw.githubusercontent.com/andistro/software-center/refs/heads/main/andistro_software_center.py
 
 chmod +x andistro_software_center.py
 
