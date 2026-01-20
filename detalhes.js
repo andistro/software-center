@@ -1,5 +1,5 @@
 // detalhes.js
-// 19:13
+// 19:16
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
@@ -15,8 +15,25 @@ let pacotesComUpdate = new Set();
 
 // --------- helpers daemon ---------
 
+function esperarDetectAndistro(timeoutMs = 3000) {
+    return new Promise((resolve) => {
+        const inicio = Date.now();
+        const checar = () => {
+            if (typeof window.__IS_ANDISTRO__ !== "undefined") {
+                resolve();
+                return;
+            }
+            if (Date.now() - inicio > timeoutMs) {
+                resolve();
+                return;
+            }
+            setTimeout(checar, 50);
+        };
+        checar();
+    });
+}
+
 async function carregarInstaladosENovos() {
-    // zera sempre que for carregar
     pacotesInstalados = new Set();
     pacotesComUpdate = new Set();
 
@@ -26,28 +43,19 @@ async function carregarInstaladosENovos() {
     }
 
     try {
-        // nomes instalados
         const resInst = await fetch("http://127.0.0.1:27777/installed-names");
         if (resInst.ok) {
             const dataInst = await resInst.json();
-            console.log("installed-names bruto:", dataInst);
             const names = dataInst.packages || [];
             pacotesInstalados = new Set(names);
             console.log("Set pacotesInstalados:", pacotesInstalados);
-        } else {
-            pacotesInstalados = new Set();
         }
 
-        // pacotes com atualização
         const resUpd = await fetch("http://127.0.0.1:27777/updates");
         if (resUpd.ok) {
             const dataUpd = await resUpd.json();
-            console.log("updates brutos:", dataUpd);
             const updates = dataUpd.updates || [];
             pacotesComUpdate = new Set(updates.map((u) => u.nome_pacote));
-            console.log("Set pacotesComUpdate:", pacotesComUpdate);
-        } else {
-            pacotesComUpdate = new Set();
         }
     } catch (e) {
         console.error("Erro ao carregar status APT:", e);
@@ -79,6 +87,7 @@ async function obterDescricaoViaDaemon(nomePacote) {
 // --------- fluxo principal ---------
 
 async function carregarPrograma() {
+    await esperarDetectAndistro();
     await carregarInstaladosENovos();
 
     let programa = {
@@ -111,15 +120,7 @@ function montarPagina(programa) {
     const card = document.createElement("div");
     card.className = "card";
 
-    // normaliza nome (caso um dia venha com sufixo de arch tipo :amd64)
     const nomePacote = (programa.nome_pacote || "").split(":")[0];
-
-    console.log(
-        "Checando instalação de:",
-        nomePacote,
-        "no Set pacotesInstalados:",
-        pacotesInstalados
-    );
 
     const jaInstalado =
         pacotesInstalados instanceof Set &&
@@ -129,7 +130,10 @@ function montarPagina(programa) {
         pacotesComUpdate instanceof Set &&
         pacotesComUpdate.has(nomePacote);
 
-    // monta cabeçalho e bloco padrão de ações
+    console.log("nomePacote:", nomePacote);
+    console.log("jaInstalado:", jaInstalado);
+    console.log("temUpdate:", temUpdate);
+
     card.innerHTML = `
         <div class="card-header">
             <img class="icon"
@@ -154,7 +158,6 @@ function montarPagina(programa) {
     const btnRemover = card.querySelector(".btn-remove");
     const btnInstalar = card.querySelector(".btn-install");
 
-    // bloco extra de atualização (criado só se precisar)
     let updateActions = null;
     let btnAtualizar = null;
 
@@ -164,22 +167,11 @@ function montarPagina(programa) {
         updateActions.innerHTML = `
             <button class="btn btn-update" data-i18n="common.update">Atualizar</button>
         `;
-        // insere ANTES do bloco principal
         card.insertBefore(updateActions, mainActions);
         btnAtualizar = updateActions.querySelector(".btn-update");
     }
 
-    // -------- estado inicial dos botões (forçado) --------
-    // zera tudo primeiro
-    btnAbrir.style.display = "none";
-    btnRemover.style.display = "none";
-    btnInstalar.style.display = "none";
-    if (btnAtualizar && updateActions) {
-        updateActions.style.display = "none";
-    }
-
     if (!window.__IS_ANDISTRO__) {
-        // fora do AnDistro: tudo desabilitado, mas layout consistente
         [btnAbrir, btnRemover, btnInstalar].forEach((b) => {
             b.disabled = true;
             b.title = "Disponível apenas no AnDistro.";
@@ -188,24 +180,57 @@ function montarPagina(programa) {
             btnAtualizar.disabled = true;
             btnAtualizar.title = "Disponível apenas no AnDistro.";
         }
-        // visualmente, mostra só Instalar cinza
-        btnInstalar.style.display = "inline-block";
     } else {
         if (!jaInstalado) {
-            // NÃO INSTALADO: só "Instalar"
+            btnAbrir.style.display = "none";
+            btnRemover.style.display = "none";
             btnInstalar.style.display = "inline-block";
             btnInstalar.disabled = false;
+
+            if (btnAtualizar && updateActions) {
+                updateActions.style.display = "none";
+            }
         } else {
-            // INSTALADO
+            btnInstalar.style.display = "none";
             btnAbrir.style.display = "inline-block";
             btnRemover.style.display = "inline-block";
             btnAbrir.disabled = false;
             btnRemover.disabled = false;
 
-            if (btnAtualizar && temUpdate && updateActions) {
+            if (btnAtualizar && updateActions) {
                 btnAtualizar.disabled = false;
-                updateActions.style.display = "flex"; // ou "block"
+                updateActions.style.display = "flex";
+            } else if (updateActions) {
+                updateActions.style.display = "none";
             }
+        }
+    }
+
+    // helpers para só mexer nos botões depois de ações
+    function aplicarEstadoNaoInstalado() {
+        btnAbrir.style.display = "none";
+        btnRemover.style.display = "none";
+        btnInstalar.style.display = "inline-block";
+        if (updateActions) updateActions.style.display = "none";
+    }
+
+    function aplicarEstadoInstalado(temUpdateAgora) {
+        btnInstalar.style.display = "none";
+        btnAbrir.style.display = "inline-block";
+        btnRemover.style.display = "inline-block";
+        if (temUpdateAgora) {
+            if (!updateActions) {
+                updateActions = document.createElement("div");
+                updateActions.className = "card-actions card-actions-update";
+                updateActions.innerHTML = `
+                    <button class="btn btn-update" data-i18n="common.update">Atualizar</button>
+                `;
+                card.insertBefore(updateActions, mainActions);
+                btnAtualizar = updateActions.querySelector(".btn-update");
+            }
+            updateActions.style.display = "flex";
+        } else if (updateActions) {
+            updateActions.style.display = "none";
         }
     }
 
@@ -254,6 +279,11 @@ function montarPagina(programa) {
                     return;
                 }
                 alert(`Pacote "${nomePacote}" removido com sucesso.`);
+
+                // atualiza estado local
+                pacotesInstalados.delete(nomePacote);
+                pacotesComUpdate.delete(nomePacote);
+                aplicarEstadoNaoInstalado();
             } catch (e) {
                 console.error("Erro ao chamar /remove:", e);
                 alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
@@ -279,6 +309,10 @@ function montarPagina(programa) {
                     return;
                 }
                 alert(`Pacote "${nomePacote}" instalado com sucesso.`);
+
+                pacotesInstalados.add(nomePacote);
+                // por padrão, assume sem update logo após instalar
+                aplicarEstadoInstalado(false);
             } catch (e) {
                 console.error("Erro ao chamar /install (install):", e);
                 alert("Erro ao instalar o pacote.\nVeja o console para detalhes.");
@@ -304,6 +338,9 @@ function montarPagina(programa) {
                     return;
                 }
                 alert(`Pacote "${nomePacote}" atualizado com sucesso.`);
+
+                pacotesComUpdate.delete(nomePacote);
+                aplicarEstadoInstalado(false);
             } catch (e) {
                 console.error("Erro ao chamar /install (update):", e);
                 alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
@@ -319,11 +356,8 @@ function montarPagina(programa) {
 async function carregarDescricaoCard(programa, card) {
     const pDesc = card.querySelector(".card-desc");
 
-    // Descobre idioma atual do i18n
     const lang = (typeof i18n !== "undefined" ? i18n.getLanguage() : "pt-BR");
 
-    // Mapeia para código de idioma usado pelo packages.debian.org
-    // pt-BR → pt-br, en-US → en, fallback en
     let debLang = "en";
     if (lang === "pt-BR") {
         debLang = "pt-br";
@@ -331,7 +365,6 @@ async function carregarDescricaoCard(programa, card) {
         debLang = "en";
     }
 
-    // 1) via Debian (stable) no idioma detectado
     try {
         const targetUrl =
             `https://packages.debian.org/${debLang}/stable/${programa.nome_pacote}`;
@@ -364,7 +397,6 @@ async function carregarDescricaoCard(programa, card) {
         console.error("Erro ao carregar descrição no site Debian", e);
     }
 
-    // 2) fallback via daemon APT (sem idioma, vem como estiver no sistema)
     try {
         const textoApt = await obterDescricaoViaDaemon(programa.nome_pacote);
         if (textoApt) {
@@ -379,7 +411,6 @@ async function carregarDescricaoCard(programa, card) {
         console.error("Erro ao carregar descrição via daemon", e);
     }
 
-    // 3) fallback final por idioma
     pDesc.textContent =
         (lang === "en-US")
             ? "Package description not available yet."
