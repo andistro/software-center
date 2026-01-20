@@ -1,5 +1,5 @@
 // detalhes.js
-// 18:36
+// 18:47
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
@@ -129,6 +129,7 @@ function montarPagina(programa) {
         pacotesComUpdate instanceof Set &&
         pacotesComUpdate.has(nomePacote);
 
+    // monta cabeçalho e bloco padrão de ações
     card.innerHTML = `
         <div class="card-header">
             <img class="icon"
@@ -140,116 +141,174 @@ function montarPagina(programa) {
                 <p class="card-desc">Carregando descrição...</p>
             </div>
         </div>
-        <div class="card-actions">
+        <div class="card-actions card-actions-main">
             <button class="btn btn-install btn-open" data-i18n="common.open">Abrir</button>
-            <button class="btn btn-install btn-update" data-i18n="common.update">Atualizar</button>
             <button class="btn btn-install btn-remove" data-i18n="common.uninstall">Desinstalar</button>
+            <button class="btn btn-install btn-install" data-i18n="common.install">Instalar</button>
         </div>
     `;
     container.appendChild(card);
 
+    const mainActions = card.querySelector(".card-actions-main");
     const btnAbrir = card.querySelector(".btn-open");
-    const btnAtualizar = card.querySelector(".btn-update");
     const btnRemover = card.querySelector(".btn-remove");
+    const btnInstalar = card.querySelector(".btn-install");
 
-    // estado inicial dos botões
+    // bloco extra de atualização (criado só se precisar)
+    let updateActions = null;
+    let btnAtualizar = null;
+
+    if (jaInstalado && temUpdate) {
+        updateActions = document.createElement("div");
+        updateActions.className = "card-actions card-actions-update";
+        updateActions.innerHTML = `
+            <button class="btn btn-install btn-update" data-i18n="common.update">Atualizar</button>
+        `;
+        // insere ANTES do bloco principal
+        card.insertBefore(updateActions, mainActions);
+        btnAtualizar = updateActions.querySelector(".btn-update");
+    }
+
+    // estado inicial dependendo do contexto
     if (!window.__IS_ANDISTRO__) {
-        [btnAbrir, btnAtualizar, btnRemover].forEach((b) => {
+        // fora do AnDistro: tudo desabilitado, mas layout consistente
+        [btnAbrir, btnRemover, btnInstalar].forEach((b) => {
             b.disabled = true;
             b.title = "Disponível apenas no AnDistro.";
         });
+        if (btnAtualizar) {
+            btnAtualizar.disabled = true;
+            btnAtualizar.title = "Disponível apenas no AnDistro.";
+        }
     } else {
         if (!jaInstalado) {
-            // não instalado
-            btnAbrir.disabled = true;
-            btnRemover.disabled = true;
-            btnAtualizar.disabled = true;
-            btnAtualizar.title =
-                "Atualização disponível apenas se o pacote estiver instalado.";
+            // NÃO INSTALADO: só "Instalar"
+            btnAbrir.style.display = "none";
+            btnRemover.style.display = "none";
+            btnInstalar.style.display = "inline-block";
+            btnInstalar.disabled = false;
+
+            if (btnAtualizar && updateActions) {
+                updateActions.style.display = "none";
+            }
         } else {
-            // instalado
+            // INSTALADO
+            btnInstalar.style.display = "none";
+            btnAbrir.style.display = "inline-block";
+            btnRemover.style.display = "inline-block";
             btnAbrir.disabled = false;
             btnRemover.disabled = false;
 
-            if (temUpdate) {
+            if (btnAtualizar && updateActions) {
                 btnAtualizar.disabled = false;
-                btnAtualizar.title = "";
-            } else {
-                btnAtualizar.style.display = "none"; // agora some mesmo
+                updateActions.style.display = "flex";
+            } else if (updateActions) {
+                updateActions.style.display = "none";
             }
         }
     }
 
     // ações
-    btnAbrir.addEventListener("click", async () => {
-        if (!window.__IS_ANDISTRO__ || btnAbrir.disabled) return;
-        try {
-            const res = await fetch("http://127.0.0.1:27777/open", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pkg: nomePacote }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || !data.ok) {
-                console.error("Falha ao abrir app:", data);
-                alert("Não foi possível abrir o aplicativo.");
+    if (btnAbrir) {
+        btnAbrir.addEventListener("click", async () => {
+            if (!window.__IS_ANDISTRO__ || btnAbrir.disabled) return;
+            try {
+                const res = await fetch("http://127.0.0.1:27777/open", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pkg: nomePacote }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) {
+                    console.error("Falha ao abrir app:", data);
+                    alert("Não foi possível abrir o aplicativo.");
+                }
+            } catch (e) {
+                console.error("Erro ao chamar /open:", e);
+                alert("Erro ao abrir o aplicativo.");
             }
-        } catch (e) {
-            console.error("Erro ao chamar /open:", e);
-            alert("Erro ao abrir o aplicativo.");
-        }
-    });
+        });
+    }
 
-    btnAtualizar.addEventListener("click", async () => {
-        if (!window.__IS_ANDISTRO__ || btnAtualizar.disabled) return;
-        try {
-            const res = await fetch("http://127.0.0.1:27777/install", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pkg: nomePacote }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || data.code !== 0) {
-                console.error("Falha ao atualizar pacote:", data);
-                alert(
-                    "Não foi possível atualizar o pacote.\nVeja o console para detalhes."
-                );
-                return;
+    if (btnRemover) {
+        btnRemover.addEventListener("click", async () => {
+            if (!window.__IS_ANDISTRO__ || btnRemover.disabled) return;
+            const ok = confirm(
+                `Tem certeza que deseja remover o pacote "${nomePacote}"?`
+            );
+            if (!ok) return;
+
+            try {
+                const res = await fetch("http://127.0.0.1:27777/remove", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pkg: nomePacote }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || data.code !== 0) {
+                    console.error("Falha ao remover pacote:", data);
+                    alert(
+                        "Não foi possível remover o pacote.\nVeja o console para detalhes."
+                    );
+                    return;
+                }
+                alert(`Pacote "${nomePacote}" removido com sucesso.`);
+            } catch (e) {
+                console.error("Erro ao chamar /remove:", e);
+                alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
             }
-            alert(`Pacote "${nomePacote}" atualizado com sucesso.`);
-        } catch (e) {
-            console.error("Erro ao chamar /install (update):", e);
-            alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
-        }
-    });
+        });
+    }
 
-    btnRemover.addEventListener("click", async () => {
-        if (!window.__IS_ANDISTRO__ || btnRemover.disabled) return;
-        const ok = confirm(
-            `Tem certeza que deseja remover o pacote "${nomePacote}"?`
-        );
-        if (!ok) return;
-
-        try {
-            const res = await fetch("http://127.0.0.1:27777/remove", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pkg: nomePacote }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || data.code !== 0) {
-                console.error("Falha ao remover pacote:", data);
-                alert(
-                    "Não foi possível remover o pacote.\nVeja o console para detalhes."
-                );
-                return;
+    if (btnInstalar) {
+        btnInstalar.addEventListener("click", async () => {
+            if (!window.__IS_ANDISTRO__ || btnInstalar.disabled) return;
+            try {
+                const res = await fetch("http://127.0.0.1:27777/install", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pkg: nomePacote }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || data.code !== 0) {
+                    console.error("Falha ao instalar pacote:", data);
+                    alert(
+                        "Não foi possível instalar o pacote.\nVeja o console para detalhes."
+                    );
+                    return;
+                }
+                alert(`Pacote "${nomePacote}" instalado com sucesso.`);
+            } catch (e) {
+                console.error("Erro ao chamar /install (install):", e);
+                alert("Erro ao instalar o pacote.\nVeja o console para detalhes.");
             }
-            alert(`Pacote "${nomePacote}" removido com sucesso.`);
-        } catch (e) {
-            console.error("Erro ao chamar /remove:", e);
-            alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
-        }
-    });
+        });
+    }
+
+    if (btnAtualizar) {
+        btnAtualizar.addEventListener("click", async () => {
+            if (!window.__IS_ANDISTRO__ || btnAtualizar.disabled) return;
+            try {
+                const res = await fetch("http://127.0.0.1:27777/install", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pkg: nomePacote }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || data.code !== 0) {
+                    console.error("Falha ao atualizar pacote:", data);
+                    alert(
+                        "Não foi possível atualizar o pacote.\nVeja o console para detalhes."
+                    );
+                    return;
+                }
+                alert(`Pacote "${nomePacote}" atualizado com sucesso.`);
+            } catch (e) {
+                console.error("Erro ao chamar /install (update):", e);
+                alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
+            }
+        });
+    }
 
     carregarDescricaoCard(programa, card);
     montarCarrossel(programa);
@@ -273,7 +332,6 @@ async function carregarDescricaoCard(programa, card) {
 
     // 1) via Debian (stable) no idioma detectado
     try {
-        // ex: https://packages.debian.org/pt-br/stable/firefox-esr
         const targetUrl =
             `https://packages.debian.org/${debLang}/stable/${programa.nome_pacote}`;
         const proxiedUrl =
