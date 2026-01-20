@@ -1,5 +1,5 @@
 // detalhes.js
-// 19:16
+// 20:25 – com barra de progresso nos botões
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
@@ -82,6 +82,60 @@ async function obterDescricaoViaDaemon(nomePacote) {
         console.error("Erro ao obter descrição via daemon:", e);
         return "";
     }
+}
+
+// --------- helpers UI de progresso ---------
+
+function iniciarProgressoBotao(btn, textoCarregando) {
+    // guarda texto original
+    if (!btn.dataset.labelOriginal) {
+        btn.dataset.labelOriginal = btn.textContent.trim();
+    }
+
+    btn.disabled = true;
+    btn.classList.add("btn-progress");
+    btn.textContent = "";
+
+    // container interno
+    const wrapper = document.createElement("div");
+    wrapper.className = "btn-progress-inner";
+
+    const bar = document.createElement("div");
+    bar.className = "btn-progress-bar";
+
+    const label = document.createElement("span");
+    label.className = "btn-progress-label";
+    label.textContent = textoCarregando;
+
+    wrapper.appendChild(bar);
+    wrapper.appendChild(label);
+
+    // limpa filhos antigos e injeta
+    btn.innerHTML = "";
+    btn.appendChild(wrapper);
+
+    // animação fake: loop de preenchimento
+    let pct = 0;
+    const step = () => {
+        pct += 5;
+        if (pct > 100) pct = 0;
+        bar.style.width = pct + "%";
+        if (btn.dataset.progressStop === "1") {
+            // reset será feito fora
+            return;
+        }
+        requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
+function finalizarProgressoBotao(btn, novoTexto) {
+    btn.dataset.progressStop = "1";
+    btn.classList.remove("btn-progress");
+    btn.disabled = false;
+    btn.innerHTML = "";
+    btn.textContent = novoTexto || btn.dataset.labelOriginal || "";
+    delete btn.dataset.progressStop;
 }
 
 // --------- fluxo principal ---------
@@ -171,6 +225,7 @@ function montarPagina(programa) {
         btnAtualizar = updateActions.querySelector(".btn-update");
     }
 
+    // estado inicial
     if (!window.__IS_ANDISTRO__) {
         [btnAbrir, btnRemover, btnInstalar].forEach((b) => {
             b.disabled = true;
@@ -182,15 +237,14 @@ function montarPagina(programa) {
         }
     } else {
         if (!jaInstalado) {
+            // NÃO INSTALADO: só Instalar
             btnAbrir.style.display = "none";
             btnRemover.style.display = "none";
             btnInstalar.style.display = "inline-block";
             btnInstalar.disabled = false;
-
-            if (btnAtualizar && updateActions) {
-                updateActions.style.display = "none";
-            }
+            if (updateActions) updateActions.style.display = "none";
         } else {
+            // INSTALADO
             btnInstalar.style.display = "none";
             btnAbrir.style.display = "inline-block";
             btnRemover.style.display = "inline-block";
@@ -206,7 +260,6 @@ function montarPagina(programa) {
         }
     }
 
-    // helpers para só mexer nos botões depois de ações
     function aplicarEstadoNaoInstalado() {
         btnAbrir.style.display = "none";
         btnRemover.style.display = "none";
@@ -280,7 +333,6 @@ function montarPagina(programa) {
                 }
                 alert(`Pacote "${nomePacote}" removido com sucesso.`);
 
-                // atualiza estado local
                 pacotesInstalados.delete(nomePacote);
                 pacotesComUpdate.delete(nomePacote);
                 aplicarEstadoNaoInstalado();
@@ -295,12 +347,15 @@ function montarPagina(programa) {
         btnInstalar.addEventListener("click", async () => {
             if (!window.__IS_ANDISTRO__ || btnInstalar.disabled) return;
             try {
+                iniciarProgressoBotao(btnInstalar, "Instalando...");
                 const res = await fetch("http://127.0.0.1:27777/install", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ pkg: nomePacote }),
                 });
                 const data = await res.json().catch(() => ({}));
+                finalizarProgressoBotao(btnInstalar, "Instalar");
+
                 if (!res.ok || data.code !== 0) {
                     console.error("Falha ao instalar pacote:", data);
                     alert(
@@ -311,10 +366,10 @@ function montarPagina(programa) {
                 alert(`Pacote "${nomePacote}" instalado com sucesso.`);
 
                 pacotesInstalados.add(nomePacote);
-                // por padrão, assume sem update logo após instalar
                 aplicarEstadoInstalado(false);
             } catch (e) {
                 console.error("Erro ao chamar /install (install):", e);
+                finalizarProgressoBotao(btnInstalar, "Instalar");
                 alert("Erro ao instalar o pacote.\nVeja o console para detalhes.");
             }
         });
@@ -324,12 +379,15 @@ function montarPagina(programa) {
         btnAtualizar.addEventListener("click", async () => {
             if (!window.__IS_ANDISTRO__ || btnAtualizar.disabled) return;
             try {
+                iniciarProgressoBotao(btnAtualizar, "Atualizando...");
                 const res = await fetch("http://127.0.0.1:27777/install", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ pkg: nomePacote }),
                 });
                 const data = await res.json().catch(() => ({}));
+                finalizarProgressoBotao(btnAtualizar, "Atualizar");
+
                 if (!res.ok || data.code !== 0) {
                     console.error("Falha ao atualizar pacote:", data);
                     alert(
@@ -343,6 +401,7 @@ function montarPagina(programa) {
                 aplicarEstadoInstalado(false);
             } catch (e) {
                 console.error("Erro ao chamar /install (update):", e);
+                finalizarProgressoBotao(btnAtualizar, "Atualizar");
                 alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
             }
         });
@@ -355,7 +414,6 @@ function montarPagina(programa) {
 // --- descrição resumida no próprio card ---
 async function carregarDescricaoCard(programa, card) {
     const pDesc = card.querySelector(".card-desc");
-
     const lang = (typeof i18n !== "undefined" ? i18n.getLanguage() : "pt-BR");
 
     let debLang = "en";

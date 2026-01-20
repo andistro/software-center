@@ -16,6 +16,8 @@
     --menu-border-default: #E5E5E5;
     --card-bg-default: #F2F2F2;
     --card-border-default: #E5E5E5;
+    --progress-bg: #B2B2B2;
+    --progress-load-bg: #666666;
 }
 
 * {
