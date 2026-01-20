@@ -1,5 +1,5 @@
 // detalhes.js
-// 18:47
+// 19:13
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
@@ -169,7 +169,15 @@ function montarPagina(programa) {
         btnAtualizar = updateActions.querySelector(".btn-update");
     }
 
-    // estado inicial dependendo do contexto
+    // -------- estado inicial dos botões (forçado) --------
+    // zera tudo primeiro
+    btnAbrir.style.display = "none";
+    btnRemover.style.display = "none";
+    btnInstalar.style.display = "none";
+    if (btnAtualizar && updateActions) {
+        updateActions.style.display = "none";
+    }
+
     if (!window.__IS_ANDISTRO__) {
         // fora do AnDistro: tudo desabilitado, mas layout consistente
         [btnAbrir, btnRemover, btnInstalar].forEach((b) => {
@@ -180,30 +188,23 @@ function montarPagina(programa) {
             btnAtualizar.disabled = true;
             btnAtualizar.title = "Disponível apenas no AnDistro.";
         }
+        // visualmente, mostra só Instalar cinza
+        btnInstalar.style.display = "inline-block";
     } else {
         if (!jaInstalado) {
             // NÃO INSTALADO: só "Instalar"
-            btnAbrir.style.display = "none";
-            btnRemover.style.display = "none";
             btnInstalar.style.display = "inline-block";
             btnInstalar.disabled = false;
-
-            if (btnAtualizar && updateActions) {
-                updateActions.style.display = "none";
-            }
         } else {
             // INSTALADO
-            btnInstalar.style.display = "none";
             btnAbrir.style.display = "inline-block";
             btnRemover.style.display = "inline-block";
             btnAbrir.disabled = false;
             btnRemover.disabled = false;
 
-            if (btnAtualizar && updateActions) {
+            if (btnAtualizar && temUpdate && updateActions) {
                 btnAtualizar.disabled = false;
-                updateActions.style.display = "flex";
-            } else if (updateActions) {
-                updateActions.style.display = "none";
+                updateActions.style.display = "flex"; // ou "block"
             }
         }
     }
