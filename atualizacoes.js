@@ -1,28 +1,15 @@
-// atualizacoes.js - Com suporte automático a i18n
+// atualizacoes.js
 
 async function carregarAtualizacoes() {
-  // Aguarda i18n estar carregado
-  await new Promise((resolve) => {
-    if (window.i18n && window.i18n.loadedLanguages.size > 0) {
-      resolve();
-    } else {
-      const checkInterval = setInterval(() => {
-        if (window.i18n && window.i18n.loadedLanguages.size > 0) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 100);
-    }
-  });
-
   const container = document.getElementById("cards-container");
 
   if (!window.__IS_ANDISTRO__) {
-    container.innerHTML = `<p>${i18n.t('atualizacoes.andistro_only')}</p>`;
+    container.innerHTML =
+      "<p>A verificação de atualizações só funciona dentro do AnDistro.</p>";
     return;
   }
 
-  container.innerHTML = `<p>${i18n.t('common.loading')}</p>`;
+  container.innerHTML = "<p>Procurando atualizações de pacotes...</p>";
 
   try {
     const res = await fetch("http://127.0.0.1:27777/updates");
@@ -32,7 +19,7 @@ async function carregarAtualizacoes() {
     const updates = dados.updates || [];
 
     if (!updates.length) {
-      container.innerHTML = `<p>${i18n.t('atualizacoes.no_updates')}</p>`;
+      container.innerHTML = "<p>Não há atualizações disponíveis.</p>";
       return;
     }
 
@@ -40,7 +27,8 @@ async function carregarAtualizacoes() {
     updates.forEach((pkg) => container.appendChild(criarCardAtualizacao(pkg)));
   } catch (e) {
     console.error("Erro ao carregar atualizações", e);
-    container.innerHTML = `<p>${i18n.t('atualizacoes.error_loading')}</p>`;
+    container.innerHTML =
+      "<p>Erro ao carregar lista de atualizações.</p>";
   }
 }
 
@@ -50,51 +38,53 @@ function criarCardAtualizacao(pkg) {
 
   const nome = pkg.nome_programa || pkg.nome_pacote;
   const pacote = pkg.nome_pacote;
-  const desc = pkg.descricao || i18n.t('common.no_description');
-
-  // Extrai versões se disponível
-  const versaoAtual = pkg.versao_atual || i18n.t('atualizacoes.unknown_version');
-  const versaoNova = pkg.versao_nova || i18n.t('atualizacoes.unknown_version');
 
   card.innerHTML = `
     <div class="card-header">
-      <h3 class="card-title">${nome}</h3>
-      <span class="version-badge">
-        ${i18n.t('atualizacoes.update_available')}: ${versaoAtual} → ${versaoNova}
-      </span>
+      <div class="card-info">
+        <h3 class="card-title">${nome}</h3>
+        <p class="card-desc">${pacote}</p>
+      </div>
     </div>
-    <div class="card-body">
-      <p class="card-description">${desc}</p>
-      <p class="version-info">
-        <strong>${i18n.t('atualizacoes.package')}:</strong> ${pacote}
-      </p>
-    </div>
-    <div class="card-footer">
-      <button class="btn-primary" onclick="atualizarPacote('${pacote}')">
-        ${i18n.t('common.update')}
-      </button>
-      <button class="btn-secondary" onclick="irParaDetalhes('${pacote}')">
-        ${i18n.t('common.details')}
-      </button>
+    <div class="card-actions">
+      <button class="btn btn-alt">Detalhes</button>
+      <button class="btn btn-install">Atualizar</button>
     </div>
   `;
+
+  const btnDetalhes = card.querySelector(".btn-alt");
+  btnDetalhes.addEventListener("click", () => {
+    const base = "detalhes.html";
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.set("pkg", pacote);
+    const qs = currentParams.toString();
+    window.location.href = `${base}?${qs}`;
+  });
+
+  const btnAtualizar = card.querySelector(".btn-install");
+  btnAtualizar.addEventListener("click", async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:27777/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pkg: pacote }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || data.code !== 0) {
+        console.error("Falha ao atualizar pacote:", data);
+        alert("Não foi possível atualizar o pacote.\nVeja o console para detalhes.");
+        return;
+      }
+
+      alert(`Pacote "${pacote}" atualizado com sucesso.`);
+    } catch (e) {
+      console.error("Erro ao chamar /install:", e);
+      alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
+    }
+  });
 
   return card;
 }
 
-function atualizarPacote(nomePacote) {
-  console.log("Atualizando pacote:", nomePacote);
-  // Implementação de atualização
-}
-
-function irParaDetalhes(nomePacote) {
-  window.location.href = `detalhes.html?pkg=${encodeURIComponent(nomePacote)}`;
-}
-
-// Executa ao carregar a página
 carregarAtualizacoes();
-
-// --------- Listener para mudança de idioma ---------
-i18n.onLanguageChange(() => {
-  carregarAtualizacoes();
-});
