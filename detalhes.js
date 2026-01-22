@@ -1,5 +1,5 @@
 // detalhes.js
-// 23:47
+// 00:02 – botões condicionais + barra de progresso
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
@@ -13,7 +13,7 @@ const URL_RECOMENDADOS = "recomendados.json";
 let pacotesInstalados = new Set();
 let pacotesComUpdate = new Set();
 
-// --------- helpers daemon ---------
+// --------- helpers daemon / detecção ---------
 
 function esperarDetectAndistro(timeoutMs = 3000) {
     return new Promise((resolve) => {
@@ -48,7 +48,6 @@ async function carregarInstaladosENovos() {
             const dataInst = await resInst.json();
             const names = dataInst.packages || [];
             pacotesInstalados = new Set(names);
-            console.log("Set pacotesInstalados:", pacotesInstalados);
         }
 
         const resUpd = await fetch("http://127.0.0.1:27777/updates");
@@ -87,16 +86,19 @@ async function obterDescricaoViaDaemon(nomePacote) {
 // --------- helpers UI de progresso ---------
 
 function iniciarProgressoBotao(btn, textoCarregando) {
-    // guarda texto original
+    // guarda texto e bg originais
     if (!btn.dataset.labelOriginal) {
         btn.dataset.labelOriginal = btn.textContent.trim();
+    }
+    if (!btn.dataset.bgOriginal) {
+        const style = window.getComputedStyle(btn);
+        btn.dataset.bgOriginal = style.backgroundColor;
     }
 
     btn.disabled = true;
     btn.classList.add("btn-progress");
     btn.textContent = "";
 
-    // container interno
     const wrapper = document.createElement("div");
     wrapper.className = "btn-progress-inner";
 
@@ -110,18 +112,20 @@ function iniciarProgressoBotao(btn, textoCarregando) {
     wrapper.appendChild(bar);
     wrapper.appendChild(label);
 
-    // limpa filhos antigos e injeta
     btn.innerHTML = "";
     btn.appendChild(wrapper);
 
-    // animação indeterminada: loop de preenchimento
+    // usa a cor atual do botão como cor de progresso
+    bar.style.backgroundColor = btn.dataset.bgOriginal;
+
+    // animação contínua (fake progresso)
     let pct = 0;
     const step = () => {
-        pct += 3;
-        if (pct > 200) pct = 0;
-        bar.style.width = Math.min(pct, 100) + "%";
+        pct += 4;
+        if (pct > 100) pct = 0;
+        bar.style.width = pct + "%";
+
         if (btn.dataset.progressStop === "1") {
-            // reset será feito fora
             return;
         }
         requestAnimationFrame(step);
@@ -184,10 +188,6 @@ function montarPagina(programa) {
         pacotesComUpdate instanceof Set &&
         pacotesComUpdate.has(nomePacote);
 
-    console.log("nomePacote:", nomePacote);
-    console.log("jaInstalado:", jaInstalado);
-    console.log("temUpdate:", temUpdate);
-
     card.innerHTML = `
         <div class="card-header">
             <img class="icon"
@@ -199,217 +199,184 @@ function montarPagina(programa) {
                 <p class="card-desc">Carregando descrição...</p>
             </div>
         </div>
-        <div class="card-actions card-actions-main">
-            <button class="btn btn-open" data-i18n="common.open">Abrir</button>
-            <button class="btn btn-remove" data-i18n="common.uninstall">Desinstalar</button>
-            <button class="btn btn-install" data-i18n="common.install">Instalar</button>
-        </div>
+        <div class="card-actions card-actions-main"></div>
     `;
     container.appendChild(card);
 
-    const mainActions = card.querySelector(".card-actions-main");
-    const btnAbrir = card.querySelector(".btn-open");
-    const btnRemover = card.querySelector(".btn-remove");
-    const btnInstalar = card.querySelector(".btn-install");
+    const actionsMain = card.querySelector(".card-actions-main");
 
-    let updateActions = null;
-    let btnAtualizar = null;
+    let btnPrincipal = null;   // único botão sempre visível
+    let btnUpdate = null;      // botão de update, em bloco separado
 
-    if (jaInstalado && temUpdate) {
-        updateActions = document.createElement("div");
-        updateActions.className = "card-actions card-actions-update";
-        updateActions.innerHTML = `
-            <button class="btn btn-update" data-i18n="common.update">Atualizar</button>
-        `;
-        card.insertBefore(updateActions, mainActions);
-        btnAtualizar = updateActions.querySelector(".btn-update");
-    }
-
-    // estado inicial
+    // cria só o botão relevante ao estado atual
     if (!window.__IS_ANDISTRO__) {
-        [btnAbrir, btnRemover, btnInstalar].forEach((b) => {
-            b.disabled = true;
-            b.title = "Disponível apenas no AnDistro.";
-        });
-        if (btnAtualizar) {
-            btnAtualizar.disabled = true;
-            btnAtualizar.title = "Disponível apenas no AnDistro.";
-        }
+        // fora do AnDistro: mostra só Instalar desabilitado
+        btnPrincipal = document.createElement("button");
+        btnPrincipal.className = "btn btn-install";
+        btnPrincipal.textContent = "Instalar";
+        btnPrincipal.disabled = true;
+        btnPrincipal.title = "Disponível apenas no AnDistro.";
+        actionsMain.appendChild(btnPrincipal);
+    } else if (!jaInstalado) {
+        // NÃO INSTALADO => só Instalar
+        btnPrincipal = document.createElement("button");
+        btnPrincipal.className = "btn btn-install";
+        btnPrincipal.textContent = "Instalar";
+        actionsMain.appendChild(btnPrincipal);
     } else {
-        if (!jaInstalado) {
-            // NÃO INSTALADO: só Instalar
-            btnAbrir.style.display = "none";
-            btnRemover.style.display = "none";
-            btnInstalar.style.display = "inline-block";
-            btnInstalar.disabled = false;
-            if (updateActions) updateActions.style.display = "none";
-        } else {
-            // INSTALADO
-            btnInstalar.style.display = "none";
-            btnAbrir.style.display = "inline-block";
-            btnRemover.style.display = "inline-block";
-            btnAbrir.disabled = false;
-            btnRemover.disabled = false;
+        // INSTALADO => Abrir + Desinstalar, mas mostra só um de cada vez
+        // regra: padrão é Abrir; se quiser mudar para Desinstalar, troca aqui
+        btnPrincipal = document.createElement("button");
+        btnPrincipal.className = "btn btn-open";
+        btnPrincipal.textContent = "Abrir";
+        actionsMain.appendChild(btnPrincipal);
 
-            if (btnAtualizar && updateActions) {
-                btnAtualizar.disabled = false;
-                updateActions.style.display = "flex";
-            } else if (updateActions) {
-                updateActions.style.display = "none";
-            }
+        // se houver update, cria bloco separado acima com botão Atualizar
+        if (temUpdate) {
+            const updateActions = document.createElement("div");
+            updateActions.className = "card-actions card-actions-update";
+            btnUpdate = document.createElement("button");
+            btnUpdate.className = "btn btn-update";
+            btnUpdate.textContent = "Atualizar";
+            updateActions.appendChild(btnUpdate);
+            card.insertBefore(updateActions, actionsMain);
         }
     }
 
-    function aplicarEstadoNaoInstalado() {
-        btnAbrir.style.display = "none";
-        btnRemover.style.display = "none";
-        btnInstalar.style.display = "inline-block";
-        if (updateActions) updateActions.style.display = "none";
+    // funções para recriar o botão principal conforme estado
+    function renderNaoInstalado() {
+        actionsMain.innerHTML = "";
+        btnPrincipal = document.createElement("button");
+        btnPrincipal.className = "btn btn-install";
+        btnPrincipal.textContent = "Instalar";
+        actionsMain.appendChild(btnPrincipal);
+        ligarHandlers();
     }
 
-    function aplicarEstadoInstalado(temUpdateAgora) {
-        btnInstalar.style.display = "none";
-        btnAbrir.style.display = "inline-block";
-        btnRemover.style.display = "inline-block";
+    function renderInstalado(temUpdateAgora) {
+        actionsMain.innerHTML = "";
+        btnPrincipal = document.createElement("button");
+        btnPrincipal.className = "btn btn-open";
+        btnPrincipal.textContent = "Abrir";
+        actionsMain.appendChild(btnPrincipal);
+
+        // bloco de update
+        const antigoUpdate = card.querySelector(".card-actions-update");
+        if (antigoUpdate) antigoUpdate.remove();
+        btnUpdate = null;
+
         if (temUpdateAgora) {
-            if (!updateActions) {
-                updateActions = document.createElement("div");
-                updateActions.className = "card-actions card-actions-update";
-                updateActions.innerHTML = `
-                    <button class="btn btn-update" data-i18n="common.update">Atualizar</button>
-                `;
-                card.insertBefore(updateActions, mainActions);
-                btnAtualizar = updateActions.querySelector(".btn-update");
-            }
-            updateActions.style.display = "flex";
-        } else if (updateActions) {
-            updateActions.style.display = "none";
+            const updateActions = document.createElement("div");
+            updateActions.className = "card-actions card-actions-update";
+            btnUpdate = document.createElement("button");
+            btnUpdate.className = "btn btn-update";
+            btnUpdate.textContent = "Atualizar";
+            updateActions.appendChild(btnUpdate);
+            card.insertBefore(updateActions, actionsMain);
+        }
+
+        ligarHandlers();
+    }
+
+    // handlers de clique (sempre consideram o estado atual dos elementos)
+    function ligarHandlers() {
+        if (!window.__IS_ANDISTRO__) return;
+
+        if (btnPrincipal && btnPrincipal.classList.contains("btn-install")) {
+            // instalar
+            btnPrincipal.onclick = async () => {
+                if (btnPrincipal.disabled) return;
+                try {
+                    iniciarProgressoBotao(btnPrincipal, "Instalando...");
+                    const res = await fetch("http://127.0.0.1:27777/install", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ pkg: nomePacote }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    finalizarProgressoBotao(btnPrincipal, "Instalar");
+
+                    if (!res.ok || data.code !== 0) {
+                        console.error("Falha ao instalar pacote:", data);
+                        alert(
+                            "Não foi possível instalar o pacote.\nVeja o console para detalhes."
+                        );
+                        return;
+                    }
+
+                    alert(`Pacote "${nomePacote}" instalado com sucesso.`);
+                    pacotesInstalados.add(nomePacote);
+                    pacotesComUpdate.delete(nomePacote);
+                    renderInstalado(false);
+                } catch (e) {
+                    console.error("Erro ao instalar pacote:", e);
+                    finalizarProgressoBotao(btnPrincipal, "Instalar");
+                    alert("Erro ao instalar o pacote.\nVeja o console para detalhes.");
+                }
+            };
+        } else if (btnPrincipal && btnPrincipal.classList.contains("btn-open")) {
+            // abrir
+            btnPrincipal.onclick = async () => {
+                if (btnPrincipal.disabled) return;
+                try {
+                    iniciarProgressoBotao(btnPrincipal, "Abrindo...");
+                    const res = await fetch("http://127.0.0.1:27777/open", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ pkg: nomePacote }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    finalizarProgressoBotao(btnPrincipal, "Abrir");
+
+                    if (!res.ok || !data.ok) {
+                        console.error("Falha ao abrir app:", data);
+                        alert("Não foi possível abrir o aplicativo.");
+                    }
+                } catch (e) {
+                    console.error("Erro ao abrir app:", e);
+                    finalizarProgressoBotao(btnPrincipal, "Abrir");
+                    alert("Erro ao abrir o aplicativo.");
+                }
+            };
+
+            // botão de desinstalar fica “implícito”: se quiser trocar
+            // o principal para Desinstalar, pode adicionar um toggle aqui.
+        }
+
+        if (btnUpdate) {
+            btnUpdate.onclick = async () => {
+                if (btnUpdate.disabled) return;
+                try {
+                    iniciarProgressoBotao(btnUpdate, "Atualizando...");
+                    const res = await fetch("http://127.0.0.1:27777/install", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ pkg: nomePacote }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    finalizarProgressoBotao(btnUpdate, "Atualizar");
+
+                    if (!res.ok || data.code !== 0) {
+                        console.error("Falha ao atualizar pacote:", data);
+                        alert(
+                            "Não foi possível atualizar o pacote.\nVeja o console para detalhes."
+                        );
+                        return;
+                    }
+
+                    alert(`Pacote "${nomePacote}" atualizado com sucesso.`);
+                    pacotesComUpdate.delete(nomePacote);
+                    renderInstalado(false);
+                } catch (e) {
+                    console.error("Erro ao atualizar pacote:", e);
+                    finalizarProgressoBotao(btnUpdate, "Atualizar");
+                    alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
+                }
+            };
         }
     }
 
-    // ações
-    if (btnAbrir) {
-        btnAbrir.addEventListener("click", async () => {
-            if (!window.__IS_ANDISTRO__ || btnAbrir.disabled) return;
-            try {
-                const res = await fetch("http://127.0.0.1:27777/open", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pkg: nomePacote }),
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data.ok) {
-                    console.error("Falha ao abrir app:", data);
-                    alert("Não foi possível abrir o aplicativo.");
-                }
-            } catch (e) {
-                console.error("Erro ao chamar /open:", e);
-                alert("Erro ao abrir o aplicativo.");
-            }
-        });
-    }
-
-    if (btnRemover) {
-        btnRemover.addEventListener("click", async () => {
-            if (!window.__IS_ANDISTRO__ || btnRemover.disabled) return;
-            const ok = confirm(
-                `Tem certeza que deseja remover o pacote "${nomePacote}"?`
-            );
-            if (!ok) return;
-
-            try {
-                iniciarProgressoBotao(btnRemover, "Removendo...");
-                const res = await fetch("http://127.0.0.1:27777/remove", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pkg: nomePacote }),
-                });
-                const data = await res.json().catch(() => ({}));
-                finalizarProgressoBotao(btnRemover, "Desinstalar");
-
-                if (!res.ok || data.code !== 0) {
-                    console.error("Falha ao remover pacote:", data);
-                    alert(
-                        "Não foi possível remover o pacote.\nVeja o console para detalhes."
-                    );
-                    return;
-                }
-                alert(`Pacote "${nomePacote}" removido com sucesso.`);
-
-                pacotesInstalados.delete(nomePacote);
-                pacotesComUpdate.delete(nomePacote);
-                aplicarEstadoNaoInstalado();
-            } catch (e) {
-                console.error("Erro ao chamar /remove:", e);
-                finalizarProgressoBotao(btnRemover, "Desinstalar");
-                alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
-            }
-        });
-    }
-
-    if (btnInstalar) {
-        btnInstalar.addEventListener("click", async () => {
-            if (!window.__IS_ANDISTRO__ || btnInstalar.disabled) return;
-            try {
-                iniciarProgressoBotao(btnInstalar, "Instalando...");
-                const res = await fetch("http://127.0.0.1:27777/install", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pkg: nomePacote }),
-                });
-                const data = await res.json().catch(() => ({}));
-                finalizarProgressoBotao(btnInstalar, "Instalar");
-
-                if (!res.ok || data.code !== 0) {
-                    console.error("Falha ao instalar pacote:", data);
-                    alert(
-                        "Não foi possível instalar o pacote.\nVeja o console para detalhes."
-                    );
-                    return;
-                }
-                alert(`Pacote "${nomePacote}" instalado com sucesso.`);
-
-                pacotesInstalados.add(nomePacote);
-                aplicarEstadoInstalado(false);
-            } catch (e) {
-                console.error("Erro ao chamar /install (install):", e);
-                finalizarProgressoBotao(btnInstalar, "Instalar");
-                alert("Erro ao instalar o pacote.\nVeja o console para detalhes.");
-            }
-        });
-    }
-
-    if (btnAtualizar) {
-        btnAtualizar.addEventListener("click", async () => {
-            if (!window.__IS_ANDISTRO__ || btnAtualizar.disabled) return;
-            try {
-                iniciarProgressoBotao(btnAtualizar, "Atualizando...");
-                const res = await fetch("http://127.0.0.1:27777/install", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pkg: nomePacote }),
-                });
-                const data = await res.json().catch(() => ({}));
-                finalizarProgressoBotao(btnAtualizar, "Atualizar");
-
-                if (!res.ok || data.code !== 0) {
-                    console.error("Falha ao atualizar pacote:", data);
-                    alert(
-                        "Não foi possível atualizar o pacote.\nVeja o console para detalhes."
-                    );
-                    return;
-                }
-                alert(`Pacote "${nomePacote}" atualizado com sucesso.`);
-
-                pacotesComUpdate.delete(nomePacote);
-                aplicarEstadoInstalado(false);
-            } catch (e) {
-                console.error("Erro ao chamar /install (update):", e);
-                finalizarProgressoBotao(btnAtualizar, "Atualizar");
-                alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
-            }
-        });
-    }
+    ligarHandlers();
 
     carregarDescricaoCard(programa, card);
     montarCarrossel(programa);
