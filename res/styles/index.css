@@ -17,7 +17,6 @@
     --card-bg-default: #F2F2F2;
     --card-border-default: #E5E5E5;
     --progress-bg: #B2B2B2;
-    --progress-load-bg: #666666;
 }
 
 * {
@@ -281,8 +280,50 @@ body {
     object-fit: cover;
 }
 
+/* Barras de progresso nos botões */
+.btn-progress {
+    position: relative;
+    overflow: hidden;
+    background: var(--progress-bg) !important;
+    color: white !important;
+    border: none !important;
+}
 
+.btn-progress.btn-install {
+    background: var(--btn-install) !important;
+}
 
+.btn-progress.btn-remove {
+    background: var(--btn-remove) !important;
+}
+
+.btn-progress.btn-update {
+    background: var(--btn-default-alt) !important;
+}
+
+.btn-progress-inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    padding: 0 12px;
+    gap: 8px;
+}
+
+.btn-progress-bar {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.1s ease;
+    min-width: 20px;
+}
+
+.btn-progress-label {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
 
 
 /* Até 375px de largura (inclusive) */

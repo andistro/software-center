@@ -1,5 +1,5 @@
 // detalhes.js
-// 20:25 – com barra de progresso nos botões
+// 23:47
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
@@ -114,12 +114,12 @@ function iniciarProgressoBotao(btn, textoCarregando) {
     btn.innerHTML = "";
     btn.appendChild(wrapper);
 
-    // animação fake: loop de preenchimento
+    // animação indeterminada: loop de preenchimento
     let pct = 0;
     const step = () => {
-        pct += 5;
-        if (pct > 100) pct = 0;
-        bar.style.width = pct + "%";
+        pct += 3;
+        if (pct > 200) pct = 0;
+        bar.style.width = Math.min(pct, 100) + "%";
         if (btn.dataset.progressStop === "1") {
             // reset será feito fora
             return;
@@ -318,12 +318,15 @@ function montarPagina(programa) {
             if (!ok) return;
 
             try {
+                iniciarProgressoBotao(btnRemover, "Removendo...");
                 const res = await fetch("http://127.0.0.1:27777/remove", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ pkg: nomePacote }),
                 });
                 const data = await res.json().catch(() => ({}));
+                finalizarProgressoBotao(btnRemover, "Desinstalar");
+
                 if (!res.ok || data.code !== 0) {
                     console.error("Falha ao remover pacote:", data);
                     alert(
@@ -338,6 +341,7 @@ function montarPagina(programa) {
                 aplicarEstadoNaoInstalado();
             } catch (e) {
                 console.error("Erro ao chamar /remove:", e);
+                finalizarProgressoBotao(btnRemover, "Desinstalar");
                 alert("Erro ao remover o pacote.\nVeja o console para detalhes.");
             }
         });
