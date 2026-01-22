@@ -283,7 +283,7 @@ body {
 
 
 /* Até 375px de largura (inclusive) */
-@media (max-width: 450px) {
+@media (max-width: 460px) {
 
     /* menu lateral */
     .menu {
