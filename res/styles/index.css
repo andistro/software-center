@@ -92,7 +92,7 @@ body {
     cursor: default;
 }
 
-.menu .logo img,
+.logo img,
 .menu-btn img{
     width: 40px;
 }
@@ -282,6 +282,9 @@ body {
 }
 
 
+
+
+
 /* Até 375px de largura (inclusive) */
 @media (max-width: 460px) {
 
@@ -312,9 +315,8 @@ body {
     }
 
     .main{
-        padding: 18px 16px;
+        padding: 12px;
     }
-
 
     /* seção recomendados */
 
@@ -338,10 +340,6 @@ body {
         font-weight: 700;
     }
 
-    .card-desc {
-        font-size: 12px;
-    }
-
     .card-actions {
         gap: 8px;
     }
@@ -349,5 +347,9 @@ body {
     .card-actions .btn {
         font-size: 12px;
     }
+
+}
+
+@media (max-width: 380px) {
 
 }
