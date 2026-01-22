@@ -30,7 +30,8 @@
 
   const banner = document.createElement("div");
   banner.id = bannerId;
-  banner.textContent = i18n.t('common.andistro_only');
+  // banner.textContent = i18n.t('common.andistro_only');
+  banner.textContent = i18n?.t?.('common.andistro_only');
 
   Object.assign(banner.style, {
     position: "fixed",

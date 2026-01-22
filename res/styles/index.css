@@ -60,7 +60,7 @@ body {
 /* menu lateral */
 .menu {
     max-width: 128px;
-    padding: 16px;
+    margin: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -116,7 +116,7 @@ body {
 /* área de conteúdo */
 .content {
     flex: 1;
-    padding: 16px;
+    margin: 16px;
     max-width: 720px;
     margin-bottom: 64px;
 }
@@ -283,11 +283,12 @@ body {
 
 
 /* Até 375px de largura (inclusive) */
-@media (max-width: 375px) {
+@media (max-width: 450px) {
 
     /* menu lateral */
     .menu {
-        padding: 8px;
+        max-width: 80px;
+        margin-right: 8px;
     }
 
     /* botões menu */
@@ -304,14 +305,14 @@ body {
     }
 
 
+
     /* área de conteúdo */
-    .main{
-        padding: 18px 16px;
+    .content {
+        margin-left: 8px;
     }
 
-    .content {
-        padding: 8px;
-        padding-left: 0px;
+    .main{
+        padding: 18px 16px;
     }
 
 
