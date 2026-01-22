@@ -284,7 +284,7 @@ body {
 .btn-progress {
     position: relative;
     overflow: hidden;
-    padding: 0; /* o inner controla o padding */
+    padding: 0;
 }
 
 .btn-progress-inner {
@@ -292,7 +292,7 @@ body {
     width: 100%;
     padding: 8px;
     box-sizing: border-box;
-    background-color: var(--progress-bg); /* cinza de fundo */
+    background-color: var(--progress-bg); /* cinza fundo */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -304,8 +304,7 @@ body {
     top: 0;
     height: 100%;
     width: 0%;
-    /* cor é setada via JS com a cor original do botão */
-    /* background-color: var(--progress-load-bg); opcional */
+    /* cor é definida via JS com a cor original do botão */
     transition: width 0.15s linear;
 }
 
@@ -316,6 +315,7 @@ body {
     font-weight: 600;
     font-size: 14px;
 }
+
 
 
 

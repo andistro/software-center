@@ -1,5 +1,5 @@
 // detalhes.js
-// 00:02 – botões condicionais + barra de progresso
+// 00:17 – botões condicionais + barra de progresso com % “fake”
 
 const params = new URLSearchParams(window.location.search);
 const pkg = params.get("pkg");
@@ -107,7 +107,6 @@ function iniciarProgressoBotao(btn, textoCarregando) {
 
     const label = document.createElement("span");
     label.className = "btn-progress-label";
-    label.textContent = textoCarregando;
 
     wrapper.appendChild(bar);
     wrapper.appendChild(label);
@@ -115,31 +114,45 @@ function iniciarProgressoBotao(btn, textoCarregando) {
     btn.innerHTML = "";
     btn.appendChild(wrapper);
 
-    // usa a cor atual do botão como cor de progresso
+    // cor do progresso = cor original do botão
     bar.style.backgroundColor = btn.dataset.bgOriginal;
 
-    // animação contínua (fake progresso)
     let pct = 0;
     const step = () => {
-        pct += 4;
-        if (pct > 100) pct = 0;
-        bar.style.width = pct + "%";
+        if (btn.dataset.progressStop === "1") return;
 
-        if (btn.dataset.progressStop === "1") {
-            return;
-        }
+        pct += 1;
+        // não passa de 90% sozinho; 100% será aplicado no finalize
+        if (pct > 90) pct = 90;
+
+        bar.style.width = pct + "%";
+        label.textContent = `${textoCarregando} ${pct}%`;
+
         requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
 }
 
-function finalizarProgressoBotao(btn, novoTexto) {
-    btn.dataset.progressStop = "1";
-    btn.classList.remove("btn-progress");
-    btn.disabled = false;
-    btn.innerHTML = "";
-    btn.textContent = novoTexto || btn.dataset.labelOriginal || "";
-    delete btn.dataset.progressStop;
+function finalizarProgressoBotao(btn, textoCarregando, novoTexto) {
+    const wrapper = btn.querySelector(".btn-progress-inner");
+    const bar = wrapper ? wrapper.querySelector(".btn-progress-bar") : null;
+    const label = wrapper ? wrapper.querySelector(".btn-progress-label") : null;
+
+    // força 100% antes de resetar
+    if (bar && label) {
+        bar.style.width = "100%";
+        label.textContent = `${textoCarregando} 100%`;
+    }
+
+    // pequeno delay só para “ver” o 100%
+    setTimeout(() => {
+        btn.dataset.progressStop = "1";
+        btn.classList.remove("btn-progress");
+        btn.disabled = false;
+        btn.innerHTML = "";
+        btn.textContent = novoTexto || btn.dataset.labelOriginal || "";
+        delete btn.dataset.progressStop;
+    }, 300);
 }
 
 // --------- fluxo principal ---------
@@ -205,12 +218,11 @@ function montarPagina(programa) {
 
     const actionsMain = card.querySelector(".card-actions-main");
 
-    let btnPrincipal = null;   // único botão sempre visível
-    let btnUpdate = null;      // botão de update, em bloco separado
+    let btnPrincipal = null;   // único botão principal (Instalar ou Abrir)
+    let btnUpdate = null;      // botão de Atualizar, se houver update
 
-    // cria só o botão relevante ao estado atual
     if (!window.__IS_ANDISTRO__) {
-        // fora do AnDistro: mostra só Instalar desabilitado
+        // fora do AnDistro: só Instalar desabilitado
         btnPrincipal = document.createElement("button");
         btnPrincipal.className = "btn btn-install";
         btnPrincipal.textContent = "Instalar";
@@ -224,14 +236,12 @@ function montarPagina(programa) {
         btnPrincipal.textContent = "Instalar";
         actionsMain.appendChild(btnPrincipal);
     } else {
-        // INSTALADO => Abrir + Desinstalar, mas mostra só um de cada vez
-        // regra: padrão é Abrir; se quiser mudar para Desinstalar, troca aqui
+        // INSTALADO => botão principal Abrir
         btnPrincipal = document.createElement("button");
         btnPrincipal.className = "btn btn-open";
         btnPrincipal.textContent = "Abrir";
         actionsMain.appendChild(btnPrincipal);
 
-        // se houver update, cria bloco separado acima com botão Atualizar
         if (temUpdate) {
             const updateActions = document.createElement("div");
             updateActions.className = "card-actions card-actions-update";
@@ -243,13 +253,15 @@ function montarPagina(programa) {
         }
     }
 
-    // funções para recriar o botão principal conforme estado
     function renderNaoInstalado() {
         actionsMain.innerHTML = "";
         btnPrincipal = document.createElement("button");
         btnPrincipal.className = "btn btn-install";
         btnPrincipal.textContent = "Instalar";
         actionsMain.appendChild(btnPrincipal);
+        const antigoUpdate = card.querySelector(".card-actions-update");
+        if (antigoUpdate) antigoUpdate.remove();
+        btnUpdate = null;
         ligarHandlers();
     }
 
@@ -260,7 +272,6 @@ function montarPagina(programa) {
         btnPrincipal.textContent = "Abrir";
         actionsMain.appendChild(btnPrincipal);
 
-        // bloco de update
         const antigoUpdate = card.querySelector(".card-actions-update");
         if (antigoUpdate) antigoUpdate.remove();
         btnUpdate = null;
@@ -278,12 +289,11 @@ function montarPagina(programa) {
         ligarHandlers();
     }
 
-    // handlers de clique (sempre consideram o estado atual dos elementos)
     function ligarHandlers() {
         if (!window.__IS_ANDISTRO__) return;
 
         if (btnPrincipal && btnPrincipal.classList.contains("btn-install")) {
-            // instalar
+            // INSTALAR
             btnPrincipal.onclick = async () => {
                 if (btnPrincipal.disabled) return;
                 try {
@@ -294,7 +304,7 @@ function montarPagina(programa) {
                         body: JSON.stringify({ pkg: nomePacote }),
                     });
                     const data = await res.json().catch(() => ({}));
-                    finalizarProgressoBotao(btnPrincipal, "Instalar");
+                    finalizarProgressoBotao(btnPrincipal, "Instalando...", "Instalar");
 
                     if (!res.ok || data.code !== 0) {
                         console.error("Falha ao instalar pacote:", data);
@@ -310,12 +320,12 @@ function montarPagina(programa) {
                     renderInstalado(false);
                 } catch (e) {
                     console.error("Erro ao instalar pacote:", e);
-                    finalizarProgressoBotao(btnPrincipal, "Instalar");
+                    finalizarProgressoBotao(btnPrincipal, "Instalando...", "Instalar");
                     alert("Erro ao instalar o pacote.\nVeja o console para detalhes.");
                 }
             };
         } else if (btnPrincipal && btnPrincipal.classList.contains("btn-open")) {
-            // abrir
+            // ABRIR
             btnPrincipal.onclick = async () => {
                 if (btnPrincipal.disabled) return;
                 try {
@@ -326,7 +336,7 @@ function montarPagina(programa) {
                         body: JSON.stringify({ pkg: nomePacote }),
                     });
                     const data = await res.json().catch(() => ({}));
-                    finalizarProgressoBotao(btnPrincipal, "Abrir");
+                    finalizarProgressoBotao(btnPrincipal, "Abrindo...", "Abrir");
 
                     if (!res.ok || !data.ok) {
                         console.error("Falha ao abrir app:", data);
@@ -334,16 +344,14 @@ function montarPagina(programa) {
                     }
                 } catch (e) {
                     console.error("Erro ao abrir app:", e);
-                    finalizarProgressoBotao(btnPrincipal, "Abrir");
+                    finalizarProgressoBotao(btnPrincipal, "Abrindo...", "Abrir");
                     alert("Erro ao abrir o aplicativo.");
                 }
             };
-
-            // botão de desinstalar fica “implícito”: se quiser trocar
-            // o principal para Desinstalar, pode adicionar um toggle aqui.
         }
 
         if (btnUpdate) {
+            // ATUALIZAR
             btnUpdate.onclick = async () => {
                 if (btnUpdate.disabled) return;
                 try {
@@ -354,7 +362,7 @@ function montarPagina(programa) {
                         body: JSON.stringify({ pkg: nomePacote }),
                     });
                     const data = await res.json().catch(() => ({}));
-                    finalizarProgressoBotao(btnUpdate, "Atualizar");
+                    finalizarProgressoBotao(btnUpdate, "Atualizando...", "Atualizar");
 
                     if (!res.ok || data.code !== 0) {
                         console.error("Falha ao atualizar pacote:", data);
@@ -369,7 +377,7 @@ function montarPagina(programa) {
                     renderInstalado(false);
                 } catch (e) {
                     console.error("Erro ao atualizar pacote:", e);
-                    finalizarProgressoBotao(btnUpdate, "Atualizar");
+                    finalizarProgressoBotao(btnUpdate, "Atualizando...", "Atualizar");
                     alert("Erro ao atualizar o pacote.\nVeja o console para detalhes.");
                 }
             };
