@@ -287,7 +287,7 @@ def install():
         return jsonify({"error": "missing pkg"}), 400
 
     # IMPORTANTE: requer root / sudo devidamente configurado.
-    cmd = f"apt-get install -y {pkg!s}"
+    cmd = f"apt install --no-install-recommends -y {pkg!s}"
     code, out, err = run_cmd(cmd)
 
     return jsonify({
@@ -306,7 +306,7 @@ def remove():
         return jsonify({"error": "missing pkg"}), 400
 
     # IMPORTANTE: também requer root / sudo configurado.
-    cmd = f"apt-get remove -y {pkg!s}"
+    cmd = f"apt remove -y {pkg!s}"
     code, out, err = run_cmd(cmd)
 
     return jsonify({
